@@ -8,6 +8,10 @@
 
 :root {
 	--color-dark: rgb(13, 13, 13);
+	--color-light: rgb(82, 82, 82);
+	--green: rgb(0, 128, 0);
+	--yellow: rgb(224, 188, 0);
+	--red: rgb(255, 0, 0);
 }
 
 body {
@@ -33,11 +37,11 @@ img {
 
 .container {
 	max-width: 1200px;
+	margin: 0 auto;
 }
 
 /* Header */
 header {
-	margin: 0 auto;
 	width: 100vw;
 	height: 80px;
 	display: flex;
@@ -47,7 +51,7 @@ header {
 	.icon-element {
 		height: 100%;
 		display: flex;
-		gap: 16px;
+		gap: 0.5rem;
 		align-items: center;
 
 		img {
@@ -55,8 +59,8 @@ header {
 		}
 
 		h1 {
-			font-weight: normal;
-			font-size: 20px;
+			font-weight: 600;
+			font-size: 1.25rem;
 		}
 	}
 
@@ -66,17 +70,23 @@ header {
 		.search-bar {
 			height: 40px;
 			width: 200px;
-			border-radius: 8px;
+			border-radius: 0.5rem;
 			background-color: transparent;
 			border: none;
-			outline: 2px solid #262626;
-			padding-left: 36px;
-			color: #525252;
+			border: 2px solid var(--color-light);
+			padding-left: 2rem;
+			color: var(--color-light);
+			transition: box-shadow 0.3s;
+
+			&:focus {
+				outline: none;
+				box-shadow: 0px 0px 10px 5px rgba(255, 255, 255, 0.2);
+			}
 		}
 
 		i {
 			position: absolute;
-			color: #525252;
+			color: var(--color-light);
 			top: 12px;
 			left: 10px;
 		}
@@ -87,4 +97,59 @@ header {
 main {
 	height: calc(80vh - 80px);
 	background: url('/design-assets/showcase-bg.jpg') center center/cover;
+
+	h2 {
+		text-transform: uppercase;
+		padding-top: 2rem;
+		text-align: center;
+	}
+}
+
+/* Popular Movies Section */
+.section {
+	.divider {
+		margin: 2rem 0 1rem 0;
+		display: flex;
+		align-items: center;
+		font-size: 1.5rem;
+		gap: 1rem;
+
+		.divider-line {
+			background-color: var(--color-light);
+			opacity: 0.3;
+			height: 0.2rem;
+			flex-grow: 1;
+			border-radius: 8px;
+		}
+	}
+
+	.movie-grid {
+		display: grid;
+		grid-template-columns: repeat(5, 1fr);
+		gap: 1rem;
+
+		.card {
+			position: relative;
+
+			.rating {
+				position: absolute;
+				top: 0.5rem;
+				left: 0.5rem;
+				background-color: var(--green);
+				padding: 0.25rem 0.5rem;
+				border-radius: 0.5rem;
+			}
+
+			img {
+				cursor: pointer;
+				border-radius: 1rem;
+			}
+
+			p {
+				display: flex;
+				justify-content: space-between;
+				opacity: 0.3;
+			}
+		}
+	}
 }
