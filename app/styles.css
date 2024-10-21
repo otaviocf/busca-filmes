@@ -42,9 +42,9 @@ img {
 
 /* Header */
 header {
-	width: 100vw;
 	height: 80px;
 	display: flex;
+	gap: 0.5rem;
 	align-items: center;
 	justify-content: space-between;
 
@@ -66,10 +66,12 @@ header {
 
 	form {
 		position: relative;
+		width: 90px;
+		transition: width 0.5s ease-in-out;
 
 		.search-bar {
 			height: 40px;
-			width: 200px;
+			width: 100%;
 			border-radius: 0.5rem;
 			background-color: transparent;
 			border: none;
@@ -91,6 +93,10 @@ header {
 			left: 10px;
 		}
 	}
+}
+
+header form:has(input:focus) {
+	width: 360px;
 }
 
 /* Hero Section */
@@ -151,5 +157,36 @@ main {
 				opacity: 0.3;
 			}
 		}
+	}
+}
+
+/* Media Queries for the number of columns */
+@media (max-width: 1236px) {
+	.container {
+		margin: 0 2rem;
+	}
+}
+
+@media (max-width: 1199px) {
+	.section .movie-grid {
+		grid-template-columns: repeat(4, 1fr);
+	}
+}
+
+@media (max-width: 991px) {
+	.section .movie-grid {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+
+@media (max-width: 767px) {
+	.section .movie-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (max-width: 575px) {
+	header form:has(input:focus) {
+		width: 200px;
 	}
 }
