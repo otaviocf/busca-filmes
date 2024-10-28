@@ -30,18 +30,16 @@ async function getPopularMovies() {
 }
 
 async function displayPopularMovies() {
-	const obj = await getPopularMovies()
+	const { results } = await getPopularMovies()
 	const movieGrid = document.querySelector('.movie-grid')
 
 	for (let i = 0; i <= 19; i++) {
-		const card = await generateMovieCard(obj, i)
+		const card = generateMovieCard(results, i)
 		movieGrid.append(card)
 	}
-
-	console.log(obj)
 }
 
-async function generateMovieCard(movie, index) {
+function generateMovieCard(results, index) {
 	// Create Elements
 	const card = document.createElement('div')
 	const rating = document.createElement('div')
@@ -56,20 +54,21 @@ async function generateMovieCard(movie, index) {
 	rating.classList.add('rating')
 	cover.setAttribute(
 		'src',
-		`https://image.tmdb.org/t/p/w500/${movie.results[index].poster_path}`
+		`https://image.tmdb.org/t/p/w500/${results[index].poster_path}`
 	)
-	cover.setAttribute('alt', 'Capa do filme')
+	cover.setAttribute('alt', `Capa do filme: ${results[index].title}`)
 	year.id = 'release-year'
 	runtime.id = 'runtime'
 
 	// Add Content
-	title.textContent = movie.results[index].title
-	year.textContent = movie.results[index].release_date.slice(0, 4) // Only interested in the year (first 4 characters)
-	rating.textContent = movie.results[index].vote_average.toFixed(1)
+	title.textContent = results[index].title
+	year.textContent = results[index].release_date.slice(0, 4) // Only interested in the year (first 4 characters)
+	rating.textContent = results[index].vote_average.toFixed(1)
 
-	if (movie.results[index].vote_average >= 8) {
+	// Check rating for color coding
+	if (results[index].vote_average >= 8) {
 		rating.style.backgroundColor = 'var(--green)'
-	} else if (movie.results[index].vote_average >= 5) {
+	} else if (results[index].vote_average >= 5) {
 		rating.style.backgroundColor = 'var(--yellow)'
 	} else {
 		rating.style.backgroundColor = 'var(--red)'
