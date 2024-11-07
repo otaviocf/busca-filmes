@@ -149,6 +149,7 @@ main {
 			img {
 				cursor: pointer;
 				border-radius: 1rem;
+				height: 340px;
 			}
 
 			p {
