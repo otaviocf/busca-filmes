@@ -33,7 +33,7 @@ async function fetchAPI(endpoint, page = 'page=1') {
 }
 
 async function displayPopularMovies() {
-	const { results } = await fetchAPI('movie/popular')
+	const { results } = await fetchAPI('trending/movie/week')
 	const movieGrid = document.querySelector('#popular-movies')
 
 	for (let i = 0; i <= 19; i++) {
@@ -43,7 +43,7 @@ async function displayPopularMovies() {
 }
 
 async function displayPopularShows() {
-	const { results } = await fetchAPI('tv/top_rated')
+	const { results } = await fetchAPI('trending/tv/week')
 	const grid = document.querySelector('#popular-shows')
 
 	for (let i = 0; i <= 19; i++) {
@@ -78,7 +78,15 @@ async function generateCard(results, index) {
 	year.textContent = results[index].release_date.slice(0, 4) // Only interested in the year (first 4 characters)
 	rating.textContent = results[index].vote_average.toFixed(1)
 	let movieData = await fetchAPI(`movie/${results[index].id}`)
-	runtime.textContent = `${movieData.runtime}min`
+	if (movieData.runtime < 60) {
+		runtime.textContent = `${movieData.runtime}min`
+	} else if (movieData.runtime === 60) {
+		runtime.textContent = '1h'
+	} else {
+		runtime.textContent = `${Math.floor(movieData.runtime / 60)}h ${
+			movieData.runtime % 60
+		}min`
+	}
 
 	// Check rating for color coding
 	if (results[index].vote_average >= 8) {
@@ -121,7 +129,7 @@ async function generateTVShowCard(results, index) {
 	title.textContent = results[index].name
 	year.textContent = results[index].first_air_date.slice(0, 4) // Only interested in the year (first 4 characters)
 	rating.textContent = results[index].vote_average.toFixed(1)
-	let showData = await fetchAPI(`tv/${results[index].id}`, '')
+	let showData = await fetchAPI(`tv/${results[index].id}`)
 	showData.number_of_seasons === 1
 		? (runtime.textContent = `${showData.number_of_seasons} temporada`)
 		: (runtime.textContent = `${showData.number_of_seasons} temporadas`)
