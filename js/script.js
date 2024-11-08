@@ -15,7 +15,7 @@ function init() {
 	}
 }
 
-async function fetchAPI(endpoint) {
+async function fetchAPI(endpoint, page = 'page=1') {
 	const options = {
 		method: 'GET',
 		headers: {
@@ -24,7 +24,7 @@ async function fetchAPI(endpoint) {
 		},
 	}
 
-	const res = await fetch(`${url}/${endpoint}?language=pt-BR&page=1`, options)
+	const res = await fetch(`${url}/${endpoint}?language=pt-BR&${page}`, options)
 	const data = await res.json()
 
 	console.log(data)
@@ -37,7 +37,7 @@ async function displayPopularMovies() {
 	const movieGrid = document.querySelector('#popular-movies')
 
 	for (let i = 0; i <= 19; i++) {
-		const card = generateCard(results, i)
+		const card = await generateCard(results, i)
 		movieGrid.append(card)
 	}
 }
@@ -47,12 +47,12 @@ async function displayPopularShows() {
 	const grid = document.querySelector('#popular-shows')
 
 	for (let i = 0; i <= 19; i++) {
-		const card = generateTVShowCard(results, i)
+		const card = await generateTVShowCard(results, i)
 		grid.append(card)
 	}
 }
 
-function generateCard(results, index) {
+async function generateCard(results, index) {
 	// Create Elements
 	const card = document.createElement('div')
 	const rating = document.createElement('div')
@@ -77,6 +77,8 @@ function generateCard(results, index) {
 	title.textContent = results[index].title
 	year.textContent = results[index].release_date.slice(0, 4) // Only interested in the year (first 4 characters)
 	rating.textContent = results[index].vote_average.toFixed(1)
+	let movieData = await fetchAPI(`movie/${results[index].id}`)
+	runtime.textContent = `${movieData.runtime}min`
 
 	// Check rating for color coding
 	if (results[index].vote_average >= 8) {
@@ -94,7 +96,7 @@ function generateCard(results, index) {
 	return card
 }
 
-function generateTVShowCard(results, index) {
+async function generateTVShowCard(results, index) {
 	// Create Elements
 	const card = document.createElement('div')
 	const rating = document.createElement('div')
@@ -111,7 +113,7 @@ function generateTVShowCard(results, index) {
 		'src',
 		`https://image.tmdb.org/t/p/w500/${results[index].poster_path}`
 	)
-	cover.setAttribute('alt', `Capa do filme: ${results[index].title}`)
+	cover.setAttribute('alt', `Capa do filme: ${results[index].name}`)
 	year.id = 'release-year'
 	runtime.id = 'runtime'
 
@@ -119,6 +121,10 @@ function generateTVShowCard(results, index) {
 	title.textContent = results[index].name
 	year.textContent = results[index].first_air_date.slice(0, 4) // Only interested in the year (first 4 characters)
 	rating.textContent = results[index].vote_average.toFixed(1)
+	let showData = await fetchAPI(`tv/${results[index].id}`, '')
+	showData.number_of_seasons === 1
+		? (runtime.textContent = `${showData.number_of_seasons} temporada`)
+		: (runtime.textContent = `${showData.number_of_seasons} temporadas`)
 
 	// Check rating for color coding
 	if (results[index].vote_average >= 8) {
