@@ -52,8 +52,8 @@ async function displayPopularShows() {
 	}
 }
 
-async function generateCard(results, index) {
-	// Create Elements
+function generateElementsForCard() {
+	// Generate elements
 	const card = document.createElement('div')
 	const rating = document.createElement('div')
 	const cover = document.createElement('img')
@@ -62,16 +62,24 @@ async function generateCard(results, index) {
 	const year = document.createElement('span')
 	const runtime = document.createElement('span')
 
-	// Add Classes and IDs
+	// Add classes and IDs
+	year.id = 'release-year'
+	runtime.id = 'runtime'
 	card.classList.add('card')
 	rating.classList.add('rating')
+
+	return [card, rating, cover, title, details, year, runtime]
+}
+
+async function generateCard(results, index) {
+	let [card, rating, cover, title, details, year, runtime] =
+		generateElementsForCard()
+
 	cover.setAttribute(
 		'src',
 		`https://image.tmdb.org/t/p/w500/${results[index].poster_path}`
 	)
 	cover.setAttribute('alt', `Capa do filme: ${results[index].title}`)
-	year.id = 'release-year'
-	runtime.id = 'runtime'
 
 	// Add Content
 	title.textContent = results[index].title
@@ -105,25 +113,14 @@ async function generateCard(results, index) {
 }
 
 async function generateTVShowCard(results, index) {
-	// Create Elements
-	const card = document.createElement('div')
-	const rating = document.createElement('div')
-	const cover = document.createElement('img')
-	const title = document.createElement('h4')
-	const details = document.createElement('p')
-	const year = document.createElement('span')
-	const runtime = document.createElement('span')
+	let [card, rating, cover, title, details, year, runtime] =
+		generateElementsForCard()
 
-	// Add Classes and IDs
-	card.classList.add('card')
-	rating.classList.add('rating')
 	cover.setAttribute(
 		'src',
 		`https://image.tmdb.org/t/p/w500/${results[index].poster_path}`
 	)
 	cover.setAttribute('alt', `Capa do filme: ${results[index].name}`)
-	year.id = 'release-year'
-	runtime.id = 'runtime'
 
 	// Add Content
 	title.textContent = results[index].name
