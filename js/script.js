@@ -4,6 +4,8 @@ const token = setToken()
 const url = setURL()
 const key = setKey()
 const global = { currentPage: window.location.pathname }
+const next = document.querySelector('.popular-movie-pag #next')
+let page = 2
 
 function init() {
 	switch (global.currentPage) {
@@ -15,7 +17,7 @@ function init() {
 	}
 }
 
-async function fetchAPI(endpoint, page = 'page=1') {
+async function fetchAPI(endpoint, page = 1) {
 	const options = {
 		method: 'GET',
 		headers: {
@@ -24,7 +26,10 @@ async function fetchAPI(endpoint, page = 'page=1') {
 		},
 	}
 
-	const res = await fetch(`${url}/${endpoint}?language=pt-BR&${page}`, options)
+	const res = await fetch(
+		`${url}/${endpoint}?language=pt-BR&page=${page}`,
+		options
+	)
 	const data = await res.json()
 
 	console.log(data)
@@ -32,8 +37,8 @@ async function fetchAPI(endpoint, page = 'page=1') {
 	return data
 }
 
-async function displayPopularMovies() {
-	const { results } = await fetchAPI('trending/movie/week')
+async function displayPopularMovies(page = 1) {
+	const { results } = await fetchAPI('trending/movie/week', page)
 	const movieGrid = document.querySelector('#popular-movies')
 
 	for (let i = 0; i <= 19; i++) {
@@ -147,5 +152,15 @@ async function generateTVShowCard(results, index) {
 	return card
 }
 
+async function nextPage() {
+	document.querySelector('.movie-grid').innerHTML = ''
+
+	displayPopularMovies(page++)
+	document
+		.querySelector('.movie-grid')
+		.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
 // Event Listeners
 document.addEventListener('DOMContentLoaded', init)
+next.addEventListener('click', nextPage)
