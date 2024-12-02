@@ -159,6 +159,30 @@ main {
 			}
 		}
 	}
+
+	.page {
+		display: flex;
+		justify-content: center;
+		margin: 2rem auto;
+		gap: 1rem;
+
+		.pagination-button {
+			background-color: transparent;
+			color: rgba(255, 255, 255, 0.6);
+			display: flex;
+			gap: 1rem;
+			font-size: 1.2rem;
+			border-radius: 1rem;
+			padding: 1rem;
+			cursor: pointer;
+			border: none;
+			transition: background-color 0.2s;
+
+			&:hover {
+				background-color: rgba(255, 255, 255, 0.1);
+			}
+		}
+	}
 }
 
 /* Media Queries for the number of columns */

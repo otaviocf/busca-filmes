@@ -4,8 +4,11 @@ const token = setToken()
 const url = setURL()
 const key = setKey()
 const global = { currentPage: window.location.pathname }
-const next = document.querySelector('.popular-movie-pag #next')
-let page = 2
+const next = document.querySelector('#next')
+const previous = document.querySelector('#previous')
+const seriesNext = document.querySelector('#series-next')
+const seriesPrevious = document.querySelector('#series-previous')
+let page = 1
 
 function init() {
 	switch (global.currentPage) {
@@ -17,7 +20,7 @@ function init() {
 	}
 }
 
-async function fetchAPI(endpoint, page = 1) {
+async function getData(endpoint, page = 1) {
 	const options = {
 		method: 'GET',
 		headers: {
@@ -32,23 +35,21 @@ async function fetchAPI(endpoint, page = 1) {
 	)
 	const data = await res.json()
 
-	console.log(data)
-
 	return data
 }
 
 async function displayPopularMovies(page = 1) {
-	const { results } = await fetchAPI('trending/movie/week', page)
+	const { results } = await getData('trending/movie/week', page)
 	const movieGrid = document.querySelector('#popular-movies')
 
 	for (let i = 0; i <= 19; i++) {
-		const card = await generateCard(results, i)
+		const card = await generateMovieCard(results, i)
 		movieGrid.append(card)
 	}
 }
 
-async function displayPopularShows() {
-	const { results } = await fetchAPI('trending/tv/week')
+async function displayPopularShows(page = 1) {
+	const { results } = await getData('trending/tv/week', page)
 	const grid = document.querySelector('#popular-shows')
 
 	for (let i = 0; i <= 19; i++) {
@@ -76,7 +77,7 @@ function generateElementsForCard() {
 	return [card, rating, cover, title, details, year, runtime]
 }
 
-async function generateCard(results, index) {
+async function generateMovieCard(results, index) {
 	let [card, rating, cover, title, details, year, runtime] =
 		generateElementsForCard()
 
@@ -90,7 +91,7 @@ async function generateCard(results, index) {
 	title.textContent = results[index].title
 	year.textContent = results[index].release_date.slice(0, 4) // Only interested in the year (first 4 characters)
 	rating.textContent = results[index].vote_average.toFixed(1)
-	let movieData = await fetchAPI(`movie/${results[index].id}`)
+	let movieData = await getData(`movie/${results[index].id}`)
 	if (movieData.runtime < 60) {
 		runtime.textContent = `${movieData.runtime}min`
 	} else if (movieData.runtime === 60) {
@@ -131,7 +132,7 @@ async function generateTVShowCard(results, index) {
 	title.textContent = results[index].name
 	year.textContent = results[index].first_air_date.slice(0, 4) // Only interested in the year (first 4 characters)
 	rating.textContent = results[index].vote_average.toFixed(1)
-	let showData = await fetchAPI(`tv/${results[index].id}`)
+	let showData = await getData(`tv/${results[index].id}`)
 	showData.number_of_seasons === 1
 		? (runtime.textContent = `${showData.number_of_seasons} temporada`)
 		: (runtime.textContent = `${showData.number_of_seasons} temporadas`)
@@ -152,15 +153,57 @@ async function generateTVShowCard(results, index) {
 	return card
 }
 
-async function nextPage() {
-	document.querySelector('.movie-grid').innerHTML = ''
+function nextPage(section) {
+	page += 1
 
-	displayPopularMovies(page++)
-	document
-		.querySelector('.movie-grid')
-		.scrollIntoView({ behavior: 'smooth', block: 'start' })
+	if (section === 'movie') {
+		document.querySelector('#popular-movies').innerHTML = ''
+		displayPopularMovies(page)
+		document
+			.querySelector('.movie-grid')
+			.scrollIntoView({ behavior: 'smooth', block: 'start' })
+	} else if (section === 'series') {
+		document.querySelector('#popular-shows').innerHTML = ''
+		displayPopularShows(page)
+		document
+			.querySelector('#popular-shows')
+			.scrollIntoView({ behavior: 'smooth', block: 'start' })
+	}
+}
+
+function preivousPage(section) {
+	page -= 1
+
+	if (section === 'movie') {
+		document.querySelector('#popular-movies').innerHTML = ''
+		displayPopularMovies(page)
+		document
+			.querySelector('.movie-grid')
+			.scrollIntoView({ behavior: 'smooth', block: 'start' })
+	} else if (section === 'series') {
+		document.querySelector('#popular-shows').innerHTML = ''
+		displayPopularShows(page)
+		document
+			.querySelector('#popular-shows')
+			.scrollIntoView({ behavior: 'smooth', block: 'start' })
+	}
 }
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', init)
-next.addEventListener('click', nextPage)
+next.addEventListener('click', (event) => nextPage('movie'))
+previous.addEventListener('click', (event) => {
+	if (page === 1) {
+		alert('Você já está na primeira página')
+	} else {
+		preivousPage('movie')
+	}
+})
+seriesNext.addEventListener('click', (event) => nextPage('series'))
+seriesPrevious.addEventListener('click', (event) => {
+	if (page === 1) {
+		alert('Você já está na primeira página')
+	} else {
+		preivousPage('series')
+	}
+})
