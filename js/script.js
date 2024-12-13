@@ -9,6 +9,7 @@ const previous = document.querySelector('#previous')
 const seriesNext = document.querySelector('#series-next')
 const seriesPrevious = document.querySelector('#series-previous')
 let page = 1
+let TVpage = 1
 
 function init() {
 	switch (global.currentPage) {
@@ -154,7 +155,8 @@ async function generateTVShowCard(results, index) {
 }
 
 function nextPage(section) {
-	page += 1
+	section === 'movie' ? (page += 1) : null
+	section === 'series' ? (TVpage += 1) : null
 
 	if (section === 'movie') {
 		document.querySelector('#popular-movies').innerHTML = ''
@@ -172,7 +174,8 @@ function nextPage(section) {
 }
 
 function preivousPage(section) {
-	page -= 1
+	section === 'movie' ? (page -= 1) : null
+	section === 'series' ? (TVpage -= 1) : null
 
 	if (section === 'movie') {
 		document.querySelector('#popular-movies').innerHTML = ''
@@ -201,7 +204,7 @@ previous.addEventListener('click', (event) => {
 })
 seriesNext.addEventListener('click', (event) => nextPage('series'))
 seriesPrevious.addEventListener('click', (event) => {
-	if (page === 1) {
+	if (TVpage === 1) {
 		alert('Você já está na primeira página')
 	} else {
 		preivousPage('series')
