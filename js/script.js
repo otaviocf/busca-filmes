@@ -8,8 +8,8 @@ const next = document.querySelector('#next')
 const previous = document.querySelector('#previous')
 const seriesNext = document.querySelector('#series-next')
 const seriesPrevious = document.querySelector('#series-previous')
-let page = 1
-let TVpage = 1
+let moviePage = 1
+let showPage = 1
 
 function init() {
 	switch (global.currentPage) {
@@ -54,7 +54,7 @@ async function displayPopularShows(page = 1) {
 	const grid = document.querySelector('#popular-shows')
 
 	for (let i = 0; i <= 19; i++) {
-		const card = await generateTVShowCard(results, i)
+		const card = await generateShowCard(results, i)
 		grid.append(card)
 	}
 }
@@ -119,15 +119,19 @@ async function generateMovieCard(results, index) {
 	return card
 }
 
-async function generateTVShowCard(results, index) {
+async function generateShowCard(results, index) {
 	let [card, rating, cover, title, details, year, runtime] =
 		generateElementsForCard()
 
-	cover.setAttribute(
-		'src',
-		`https://image.tmdb.org/t/p/w500/${results[index].poster_path}`
-	)
-	cover.setAttribute('alt', `Capa do filme: ${results[index].name}`)
+	try {
+		cover.setAttribute(
+			'src',
+			`https://image.tmdb.org/t/p/w500/${results[index].poster_path}`
+		)
+		cover.setAttribute('alt', `Capa do filme: ${results[index].name}`)
+	} catch (error) {
+		cover.setAttribute('src', '../assets/no-image.jpg')
+	}
 
 	// Add Content
 	title.textContent = results[index].name
@@ -155,40 +159,40 @@ async function generateTVShowCard(results, index) {
 }
 
 function nextPage(section) {
-	section === 'movie' ? (page += 1) : null
-	section === 'series' ? (TVpage += 1) : null
+	section === 'movie' ? (moviePage += 1) : null
+	section === 'series' ? (showPage += 1) : null
 
 	if (section === 'movie') {
 		document.querySelector('#popular-movies').innerHTML = ''
-		displayPopularMovies(page)
+		displayPopularMovies(moviePage)
 		document
-			.querySelector('.movie-grid')
-			.scrollIntoView({ behavior: 'smooth', block: 'start' })
+			.querySelectorAll('.divider')[0]
+			.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
 	} else if (section === 'series') {
 		document.querySelector('#popular-shows').innerHTML = ''
-		displayPopularShows(page)
+		displayPopularShows(showPage)
 		document
-			.querySelector('#popular-shows')
-			.scrollIntoView({ behavior: 'smooth', block: 'start' })
+			.querySelectorAll('.divider')[1]
+			.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
 	}
 }
 
 function preivousPage(section) {
-	section === 'movie' ? (page -= 1) : null
-	section === 'series' ? (TVpage -= 1) : null
+	section === 'movie' ? (moviePage -= 1) : null
+	section === 'series' ? (showPage -= 1) : null
 
 	if (section === 'movie') {
 		document.querySelector('#popular-movies').innerHTML = ''
-		displayPopularMovies(page)
+		displayPopularMovies(moviePage)
 		document
-			.querySelector('.movie-grid')
-			.scrollIntoView({ behavior: 'smooth', block: 'start' })
+			.querySelectorAll('.divider')[0]
+			.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
 	} else if (section === 'series') {
 		document.querySelector('#popular-shows').innerHTML = ''
-		displayPopularShows(page)
+		displayPopularShows(showPage)
 		document
-			.querySelector('#popular-shows')
-			.scrollIntoView({ behavior: 'smooth', block: 'start' })
+			.querySelectorAll('.divider')[1]
+			.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
 	}
 }
 
@@ -196,7 +200,7 @@ function preivousPage(section) {
 document.addEventListener('DOMContentLoaded', init)
 next.addEventListener('click', (event) => nextPage('movie'))
 previous.addEventListener('click', (event) => {
-	if (page === 1) {
+	if (moviePage === 1) {
 		alert('Você já está na primeira página')
 	} else {
 		preivousPage('movie')
@@ -204,7 +208,7 @@ previous.addEventListener('click', (event) => {
 })
 seriesNext.addEventListener('click', (event) => nextPage('series'))
 seriesPrevious.addEventListener('click', (event) => {
-	if (TVpage === 1) {
+	if (showPage === 1) {
 		alert('Você já está na primeira página')
 	} else {
 		preivousPage('series')
