@@ -127,6 +127,21 @@ main {
 			flex-grow: 1;
 			border-radius: 8px;
 		}
+
+		.page-button-container {
+			display: flex;
+			gap: 0.5rem;
+
+			.page-button {
+				padding: 0rem 0.5rem;
+				border-radius: 0.5rem;
+				cursor: pointer;
+
+				i {
+					color: rgba(255, 255, 255, 0.3);
+				}
+			}
+		}
 	}
 
 	.movie-grid {
@@ -136,6 +151,7 @@ main {
 
 		.card {
 			position: relative;
+			max-width: fit-content;
 
 			.rating {
 				position: absolute;

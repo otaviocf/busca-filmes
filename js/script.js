@@ -4,10 +4,10 @@ const token = setToken()
 const url = setURL()
 const key = setKey()
 const global = { currentPage: window.location.pathname }
-const next = document.querySelector('#next')
-const previous = document.querySelector('#previous')
-const seriesNext = document.querySelector('#series-next')
-const seriesPrevious = document.querySelector('#series-previous')
+const next = document.querySelector('#forward-movie')
+const previous = document.querySelector('#backward-movie')
+const seriesNext = document.querySelector('#forward-show')
+const seriesPrevious = document.querySelector('#backward-show')
 let moviePage = 1
 let showPage = 1
 
@@ -79,6 +79,8 @@ function generateElementsForCard() {
 }
 
 async function generateMovieCard(results, index) {
+	console.log(results)
+
 	let [card, rating, cover, title, details, year, runtime] =
 		generateElementsForCard()
 
@@ -91,12 +93,16 @@ async function generateMovieCard(results, index) {
 	// Add Content
 	title.textContent = results[index].title
 	year.textContent = results[index].release_date.slice(0, 4) // Only interested in the year (first 4 characters)
-	rating.textContent = results[index].vote_average.toFixed(1)
+	if (results[index].vote_average === 0) {
+		rating.textContent = 'Não estreado'
+	} else {
+		rating.textContent = results[index].vote_average.toFixed(1)
+	}
 	let movieData = await getData(`movie/${results[index].id}`)
 	if (movieData.runtime < 60) {
 		runtime.textContent = `${movieData.runtime}min`
-	} else if (movieData.runtime === 60) {
-		runtime.textContent = '1h'
+	} else if (movieData.runtime % 60 === 0) {
+		runtime.textContent = `${movieData.runtime / 60}h`
 	} else {
 		runtime.textContent = `${Math.floor(movieData.runtime / 60)}h ${
 			movieData.runtime % 60
@@ -106,7 +112,10 @@ async function generateMovieCard(results, index) {
 	// Check rating for color coding
 	if (results[index].vote_average >= 8) {
 		rating.style.backgroundColor = 'var(--green)'
-	} else if (results[index].vote_average >= 5) {
+	} else if (
+		results[index].vote_average >= 5 ||
+		results[index].vote_average === 0
+	) {
 		rating.style.backgroundColor = 'var(--yellow)'
 	} else {
 		rating.style.backgroundColor = 'var(--red)'
@@ -184,15 +193,9 @@ function preivousPage(section) {
 	if (section === 'movie') {
 		document.querySelector('#popular-movies').innerHTML = ''
 		displayPopularMovies(moviePage)
-		document
-			.querySelectorAll('.divider')[0]
-			.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
 	} else if (section === 'series') {
 		document.querySelector('#popular-shows').innerHTML = ''
 		displayPopularShows(showPage)
-		document
-			.querySelectorAll('.divider')[1]
-			.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
 	}
 }
 
