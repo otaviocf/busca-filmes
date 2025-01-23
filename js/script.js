@@ -41,14 +41,15 @@ async function getData(endpoint, page = 1) {
 
 async function displayPopularMovies(page = 1) {
 	const { results } = await getData('trending/movie/week', page)
+	console.log(results)
 	const movieGrid = document.querySelector('#popular-movies')
 	const skeletonGrid = document.querySelector('#movie-skeleton')
 
-	for (let i = 0; i <= 19; i++) {
+	for (let i = 0; i < results.length; i++) {
 		const card = await generateMovieCard(results, i)
 		movieGrid.append(card)
 
-		if (i === 19) {
+		if (i === results.length - 1) {
 			movieGrid.style.display = 'grid'
 			skeletonGrid.style.display = 'none'
 		}
@@ -60,10 +61,10 @@ async function displayPopularShows(page = 1) {
 	const grid = document.querySelector('#popular-shows')
 	const skeletonGrid = document.querySelector('#shows-skeleton')
 
-	for (let i = 0; i <= 19; i++) {
+	for (let i = 0; i < results.length; i++) {
 		const card = await generateShowCard(results, i)
 		grid.append(card)
-		if (i === 19) {
+		if (i === results.length - 1) {
 			grid.style.display = 'grid'
 			skeletonGrid.style.display = 'none'
 		}
@@ -90,8 +91,6 @@ function generateElementsForCard() {
 }
 
 async function generateMovieCard(results, index) {
-	console.log(results)
-
 	let [card, rating, cover, title, details, year, runtime] =
 		generateElementsForCard()
 

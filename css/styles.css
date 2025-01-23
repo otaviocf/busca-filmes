@@ -101,7 +101,7 @@ header form:has(input:focus) {
 }
 
 /* Hero Section */
-main {
+main.hero {
 	height: calc(80vh - 80px);
 	background: url('../assets/showcase-bg.jpg') center center/cover;
 
@@ -172,6 +172,10 @@ main {
 				height: 340px;
 			}
 
+			h4 {
+				max-width: 210px;
+			}
+
 			p {
 				display: flex;
 				justify-content: space-between;
@@ -205,6 +209,7 @@ main {
 	}
 }
 
+/* Skeleton Loading Grid */
 .movie-grid-skeleton {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -244,28 +249,30 @@ main {
 	}
 }
 
+/* Footer */
+footer {
+	display: flex;
+	gap: 1rem;
+	padding: 2rem;
+	height: 120px;
+	justify-content: center;
+	align-items: center;
+	margin-top: 2rem;
+	border-top: 1px solid var(--color-light);
+
+	img {
+		max-height: 80%;
+	}
+
+	h1 {
+		font-size: 1.5rem;
+	}
+}
+
 /* Media Queries for the number of columns */
 @media (max-width: 1236px) {
 	.container {
 		margin: 0 2rem;
-	}
-}
-
-@media (max-width: 1199px) {
-	.section .movie-grid {
-		grid-template-columns: repeat(4, 1fr);
-	}
-}
-
-@media (max-width: 991px) {
-	.section .movie-grid {
-		grid-template-columns: repeat(3, 1fr);
-	}
-}
-
-@media (max-width: 767px) {
-	.section .movie-grid {
-		grid-template-columns: repeat(2, 1fr);
 	}
 }
 
