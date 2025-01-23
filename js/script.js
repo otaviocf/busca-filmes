@@ -42,20 +42,31 @@ async function getData(endpoint, page = 1) {
 async function displayPopularMovies(page = 1) {
 	const { results } = await getData('trending/movie/week', page)
 	const movieGrid = document.querySelector('#popular-movies')
+	const skeletonGrid = document.querySelector('#movie-skeleton')
 
 	for (let i = 0; i <= 19; i++) {
 		const card = await generateMovieCard(results, i)
 		movieGrid.append(card)
+
+		if (i === 19) {
+			movieGrid.style.display = 'grid'
+			skeletonGrid.style.display = 'none'
+		}
 	}
 }
 
 async function displayPopularShows(page = 1) {
 	const { results } = await getData('trending/tv/week', page)
 	const grid = document.querySelector('#popular-shows')
+	const skeletonGrid = document.querySelector('#shows-skeleton')
 
 	for (let i = 0; i <= 19; i++) {
 		const card = await generateShowCard(results, i)
 		grid.append(card)
+		if (i === 19) {
+			grid.style.display = 'grid'
+			skeletonGrid.style.display = 'none'
+		}
 	}
 }
 
@@ -112,11 +123,10 @@ async function generateMovieCard(results, index) {
 	// Check rating for color coding
 	if (results[index].vote_average >= 8) {
 		rating.style.backgroundColor = 'var(--green)'
-	} else if (
-		results[index].vote_average >= 5 ||
-		results[index].vote_average === 0
-	) {
+	} else if (results[index].vote_average >= 5) {
 		rating.style.backgroundColor = 'var(--yellow)'
+	} else if (results[index].vote_average === 0) {
+		rating.style.backgroundColor = 'rgb(79, 62, 54)'
 	} else {
 		rating.style.backgroundColor = 'var(--red)'
 	}
@@ -170,19 +180,21 @@ async function generateShowCard(results, index) {
 function nextPage(section) {
 	section === 'movie' ? (moviePage += 1) : null
 	section === 'series' ? (showPage += 1) : null
+	const movieGrid = document.querySelector('#popular-movies')
+	const showsGrid = document.querySelector('#popular-shows')
+	const movieSkeletonGrid = document.querySelector('#movie-skeleton')
+	const showsSkeletonGrid = document.querySelector('#shows-skeleton')
 
 	if (section === 'movie') {
-		document.querySelector('#popular-movies').innerHTML = ''
+		movieGrid.style.display = 'none'
+		movieSkeletonGrid.style.display = 'grid'
+		movieGrid.innerHTML = ''
 		displayPopularMovies(moviePage)
-		document
-			.querySelectorAll('.divider')[0]
-			.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
 	} else if (section === 'series') {
-		document.querySelector('#popular-shows').innerHTML = ''
+		showsGrid.style.display = 'none'
+		showsSkeletonGrid.style.display = 'grid'
+		showsGrid.innerHTML = ''
 		displayPopularShows(showPage)
-		document
-			.querySelectorAll('.divider')[1]
-			.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
 	}
 }
 
