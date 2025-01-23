@@ -18,6 +18,15 @@ function init() {
 			displayPopularMovies()
 			displayPopularShows()
 			break
+		case '/movie-details.html':
+			getMovieDetails()
+			break
+		case '/tv-details.html':
+			console.log('Shows')
+			break
+		case '/search.html':
+			console.log('Search')
+			break
 	}
 }
 
@@ -94,11 +103,17 @@ async function generateMovieCard(results, index) {
 	let [card, rating, cover, title, details, year, runtime] =
 		generateElementsForCard()
 
-	cover.setAttribute(
-		'src',
-		`https://image.tmdb.org/t/p/w500/${results[index].poster_path}`
-	)
-	cover.setAttribute('alt', `Capa do filme: ${results[index].title}`)
+	try {
+		cover.setAttribute(
+			'src',
+			`https://image.tmdb.org/t/p/w500/${results[index].poster_path}`
+		)
+		cover.setAttribute('alt', `Capa do filme: ${results[index].title}`)
+		cover.setAttribute('data-info', `${results[index].id}`)
+	} catch (error) {
+		cover.setAttribute('src', '../assets/no-image.jpg')
+		cover.setAttribute('data-info', `${results[index].id}`)
+	}
 
 	// Add Content
 	title.textContent = results[index].title
@@ -146,9 +161,11 @@ async function generateShowCard(results, index) {
 			'src',
 			`https://image.tmdb.org/t/p/w500/${results[index].poster_path}`
 		)
-		cover.setAttribute('alt', `Capa do filme: ${results[index].name}`)
+		cover.setAttribute('alt', `Capa da série: ${results[index].name}`)
+		cover.setAttribute('data-info', `${results[index].id}`)
 	} catch (error) {
 		cover.setAttribute('src', '../assets/no-image.jpg')
+		cover.setAttribute('data-info', `${results[index].id}`)
 	}
 
 	// Add Content
@@ -210,6 +227,38 @@ function preivousPage(section) {
 	}
 }
 
+async function getMovieDetails() {
+	const id = window.location.search.slice(1)
+	const data = await getData(`/movie/${id}`)
+	console.log(data)
+
+	// Set Poster
+	const poster = document.createElement('img')
+	poster.setAttribute(
+		'src',
+		`https://image.tmdb.org/t/p/w500/${data.poster_path}`
+	)
+	document.querySelector('.poster').appendChild(poster)
+
+	document.querySelector('.content h1').textContent = data.title
+	document.querySelector('.content p').textContent = data.overview
+	document.querySelector('.main-info .year span').textContent =
+		data.release_date.slice(0, 4)
+	document.querySelector('.main-info .rating span').textContent =
+		data.vote_average.toFixed(1)
+
+	const runtime = document.querySelector('.main-info .runtime span')
+	if (data.runtime < 60) {
+		runtime.textContent = `${data.runtime}min`
+	} else if (data.runtime % 60 === 0) {
+		runtime.textContent = `${data.runtime / 60}h`
+	} else {
+		runtime.textContent = `${Math.floor(data.runtime / 60)}h ${
+			data.runtime % 60
+		}min`
+	}
+}
+
 // Event Listeners
 document.addEventListener('DOMContentLoaded', init)
 next.addEventListener('click', (event) => nextPage('movie'))
@@ -226,5 +275,11 @@ seriesPrevious.addEventListener('click', (event) => {
 		alert('Você já está na primeira página')
 	} else {
 		preivousPage('series')
+	}
+})
+// Redirect Router to Movie Details Page
+document.querySelector('#popular-movies').addEventListener('click', (event) => {
+	if (event.target.tagName === 'IMG') {
+		window.location.assign(`./movie-details.html?${event.target.dataset.info}`)
 	}
 })
