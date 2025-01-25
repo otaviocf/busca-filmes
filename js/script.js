@@ -240,6 +240,7 @@ async function getMovieDetails() {
 	)
 	document.querySelector('.poster').appendChild(poster)
 
+	// Add Info
 	document.querySelector('.content h1').textContent = data.title
 	document.querySelector('.content p').textContent = data.overview
 	document.querySelector('.main-info .year span').textContent =
@@ -247,6 +248,7 @@ async function getMovieDetails() {
 	document.querySelector('.main-info .rating span').textContent =
 		data.vote_average.toFixed(1)
 
+	// Convert Runtime to be More Legible
 	const runtime = document.querySelector('.main-info .runtime span')
 	if (data.runtime < 60) {
 		runtime.textContent = `${data.runtime}min`
@@ -256,6 +258,33 @@ async function getMovieDetails() {
 		runtime.textContent = `${Math.floor(data.runtime / 60)}h ${
 			data.runtime % 60
 		}min`
+	}
+
+	// Add Genres
+	data.genres.forEach((genre) => {
+		const bubble = document.createElement('div')
+		bubble.classList.add('bubble')
+		bubble.setAttribute('data-id', genre.id)
+		bubble.textContent = genre.name
+		document.querySelector('.bubble-group-genres').appendChild(bubble)
+	})
+
+	// Add Backdrop
+	const overlay = document.createElement('div')
+	overlay.classList.add('backdrop')
+	overlay.style.backgroundImage = `url(https://image.tmdb.org/t/p/original/${data.backdrop_path})`
+	document.querySelector('main').appendChild(overlay)
+
+	// Add Cast
+	const castObj = await getData(`/movie/${id}/credits`)
+	const castArr = castObj.cast
+	console.log(castArr)
+	for (let i = 0; i <= 3; i++) {
+		const bubble = document.createElement('div')
+		bubble.classList.add('bubble')
+		bubble.setAttribute('data-actor', castArr[i].name)
+		bubble.textContent = castArr[i].name
+		document.querySelector('.bubble-group-actors').appendChild(bubble)
 	}
 }
 
