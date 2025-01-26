@@ -4,10 +4,6 @@ const token = setToken()
 const url = setURL()
 const key = setKey()
 const global = { currentPage: window.location.pathname }
-const next = document.querySelector('#forward-movie')
-const previous = document.querySelector('#backward-movie')
-const seriesNext = document.querySelector('#forward-show')
-const seriesPrevious = document.querySelector('#backward-show')
 let moviePage = 1
 let showPage = 1
 
@@ -17,9 +13,30 @@ function init() {
 		case '/index.html':
 			displayPopularMovies()
 			displayPopularShows()
+			homePagination()
+
+			// Redirect Router to Movie Details Page
+			document
+				.querySelector('#popular-movies')
+				.addEventListener('click', (event) => {
+					if (event.target.tagName === 'IMG') {
+						window.location.assign(
+							`./movie-details.html?${event.target.dataset.id}`
+						)
+					}
+				})
 			break
 		case '/movie-details.html':
 			getMovieDetails()
+			document
+				.querySelector('#similar-movies')
+				.addEventListener('click', (event) => {
+					if (event.target.tagName === 'IMG') {
+						window.location.assign(
+							`./movie-details.html?${event.target.dataset.id}`
+						)
+					}
+				})
 			break
 		case '/tv-details.html':
 			console.log('Shows')
@@ -109,7 +126,7 @@ async function generateMovieCard(results, index) {
 			`https://image.tmdb.org/t/p/w500/${results[index].poster_path}`
 		)
 		cover.setAttribute('alt', `Capa do filme: ${results[index].title}`)
-		cover.setAttribute('data-info', `${results[index].id}`)
+		cover.setAttribute('data-id', `${results[index].id}`)
 	} catch (error) {
 		cover.setAttribute('src', '../assets/no-image.jpg')
 		cover.setAttribute('data-info', `${results[index].id}`)
@@ -118,11 +135,8 @@ async function generateMovieCard(results, index) {
 	// Add Content
 	title.textContent = results[index].title
 	year.textContent = results[index].release_date.slice(0, 4) // Only interested in the year (first 4 characters)
-	if (results[index].vote_average === 0) {
-		rating.textContent = 'Não estreado'
-	} else {
-		rating.textContent = results[index].vote_average.toFixed(1)
-	}
+	rating.textContent =
+		Number(results[index].vote_average.toFixed(1)) || 'Sem avaliações'
 	let movieData = await getData(`movie/${results[index].id}`)
 	if (movieData.runtime < 60) {
 		runtime.textContent = `${movieData.runtime}min`
@@ -227,6 +241,30 @@ function preivousPage(section) {
 	}
 }
 
+function homePagination() {
+	const next = document.querySelector('#forward-movie')
+	const previous = document.querySelector('#backward-movie')
+	const seriesNext = document.querySelector('#forward-show')
+	const seriesPrevious = document.querySelector('#backward-show')
+
+	next.addEventListener('click', (event) => nextPage('movie'))
+	previous.addEventListener('click', (event) => {
+		if (moviePage === 1) {
+			alert('Você já está na primeira página')
+		} else {
+			preivousPage('movie')
+		}
+	})
+	seriesNext.addEventListener('click', (event) => nextPage('series'))
+	seriesPrevious.addEventListener('click', (event) => {
+		if (showPage === 1) {
+			alert('Você já está na primeira página')
+		} else {
+			preivousPage('series')
+		}
+	})
+}
+
 async function getMovieDetails() {
 	const id = window.location.search.slice(1)
 	const data = await getData(`/movie/${id}`)
@@ -242,7 +280,8 @@ async function getMovieDetails() {
 
 	// Add Info
 	document.querySelector('.content h1').textContent = data.title
-	document.querySelector('.content p').textContent = data.overview
+	document.querySelector('.content p').textContent =
+		data.overview || '[Descrição indisponível]'
 	document.querySelector('.main-info .year span').textContent =
 		data.release_date.slice(0, 4)
 	document.querySelector('.main-info .rating span').textContent =
@@ -277,38 +316,33 @@ async function getMovieDetails() {
 
 	// Add Cast
 	const castObj = await getData(`/movie/${id}/credits`)
-	const castArr = castObj.cast
-	console.log(castArr)
-	for (let i = 0; i <= 3; i++) {
+	let castArr
+	castObj.cast.length ? (castArr = castObj.cast) : (castArr = castObj.crew)
+	castArr.slice(0, 4).forEach((actor) => {
 		const bubble = document.createElement('div')
 		bubble.classList.add('bubble')
-		bubble.setAttribute('data-actor', castArr[i].name)
-		bubble.textContent = castArr[i].name
+		bubble.setAttribute('data-actor', actor.name)
+		bubble.textContent = actor.name
 		document.querySelector('.bubble-group-actors').appendChild(bubble)
-	}
+	})
+
+	displaySimilarMovies(id)
+}
+
+async function displaySimilarMovies(id) {
+	const { results } = await getData(`/movie/${id}/similar`)
+	console.log(results)
+	const movieGrid = document.querySelector('#similar-movies')
+	const skeletonGrid = document.querySelector('#similar-movie-skeleton')
+	results.slice(0, 5).forEach(async (movie, index) => {
+		const card = await generateMovieCard(results, index)
+		movieGrid.append(card)
+		if (index === 4) {
+			movieGrid.style.display = 'grid'
+			skeletonGrid.style.display = 'none'
+		}
+	})
 }
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', init)
-next.addEventListener('click', (event) => nextPage('movie'))
-previous.addEventListener('click', (event) => {
-	if (moviePage === 1) {
-		alert('Você já está na primeira página')
-	} else {
-		preivousPage('movie')
-	}
-})
-seriesNext.addEventListener('click', (event) => nextPage('series'))
-seriesPrevious.addEventListener('click', (event) => {
-	if (showPage === 1) {
-		alert('Você já está na primeira página')
-	} else {
-		preivousPage('series')
-	}
-})
-// Redirect Router to Movie Details Page
-document.querySelector('#popular-movies').addEventListener('click', (event) => {
-	if (event.target.tagName === 'IMG') {
-		window.location.assign(`./movie-details.html?${event.target.dataset.info}`)
-	}
-})
