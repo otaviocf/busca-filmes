@@ -57,7 +57,6 @@ async function getData(endpoint, page = 1) {
 
 async function displayPopularMovies(page = 1) {
 	const { results } = await getData('trending/movie/week', page)
-	console.log(results)
 	const movieGrid = document.createElement('div')
 	movieGrid.classList.add('card-grid')
 	movieGrid.id = 'popular-movies'
@@ -291,7 +290,6 @@ function homePagination() {
 async function getMovieDetails() {
 	const id = window.location.search.slice(1)
 	const data = await getData(`/movie/${id}`)
-	console.log(data)
 
 	// Set Poster
 	const poster = document.createElement('img')
@@ -349,20 +347,25 @@ async function getMovieDetails() {
 		document.querySelector('.bubble-group-actors').appendChild(bubble)
 	})
 
+	insertSkeletonGrid(document.querySelector('#similar'), 5, 'similar-skeleton')
+
 	displaySimilarMovies(id)
 }
 
 async function displaySimilarMovies(id) {
 	const { results } = await getData(`/movie/${id}/similar`)
-	console.log(results)
-	const movieGrid = document.querySelector('#similar-movies')
-	const skeletonGrid = document.querySelector('#similar-movie-skeleton')
-	results.slice(0, 5).forEach(async (movie, index) => {
+
+	const movieGrid = document.createElement('div')
+	movieGrid.classList.add('card-grid')
+	movieGrid.id = 'similar-movies'
+	const skeletonGrid = document.querySelector('#similar-skeleton')
+
+	results.slice(0, 5).forEach(async (foo, index) => {
 		const card = await generateMovieCard(results, index)
 		movieGrid.append(card)
+
 		if (index === 4) {
-			movieGrid.style.display = 'grid'
-			skeletonGrid.style.display = 'none'
+			skeletonGrid.replaceWith(movieGrid)
 		}
 	})
 }
