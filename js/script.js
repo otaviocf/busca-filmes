@@ -14,29 +14,9 @@ function init() {
 			displayPopularMovies()
 			displayPopularShows()
 			homePagination()
-
-			// Redirect Router to Movie Details Page
-			document
-				.querySelector('#popular-movies')
-				.addEventListener('click', (event) => {
-					if (event.target.tagName === 'IMG') {
-						window.location.assign(
-							`./movie-details.html?${event.target.dataset.id}`
-						)
-					}
-				})
 			break
 		case '/movie-details.html':
 			getMovieDetails()
-			document
-				.querySelector('#similar-movies')
-				.addEventListener('click', (event) => {
-					if (event.target.tagName === 'IMG') {
-						window.location.assign(
-							`./movie-details.html?${event.target.dataset.id}`
-						)
-					}
-				})
 			break
 		case '/tv-details.html':
 			console.log('Shows')
@@ -97,7 +77,7 @@ async function displayPopularShows(page = 1) {
 	}
 }
 
-function generateElementsForCard() {
+function generateElementsForCard(id) {
 	// Generate elements
 	const card = document.createElement('div')
 	const rating = document.createElement('div')
@@ -106,19 +86,21 @@ function generateElementsForCard() {
 	const details = document.createElement('p')
 	const year = document.createElement('span')
 	const runtime = document.createElement('span')
+	const link = document.createElement('a')
 
-	// Add classes and IDs
+	// Add Attributes
 	year.id = 'release-year'
 	runtime.id = 'runtime'
 	card.classList.add('card')
 	rating.classList.add('rating')
+	link.setAttribute('href', `./movie-details.html?${id}`)
 
-	return [card, rating, cover, title, details, year, runtime]
+	return [card, rating, cover, title, details, year, runtime, link]
 }
 
 async function generateMovieCard(results, index) {
-	let [card, rating, cover, title, details, year, runtime] =
-		generateElementsForCard()
+	let [card, rating, cover, title, details, year, runtime, link] =
+		generateElementsForCard(results[index].id)
 
 	try {
 		cover.setAttribute(
@@ -126,10 +108,8 @@ async function generateMovieCard(results, index) {
 			`https://image.tmdb.org/t/p/w500/${results[index].poster_path}`
 		)
 		cover.setAttribute('alt', `Capa do filme: ${results[index].title}`)
-		cover.setAttribute('data-id', `${results[index].id}`)
 	} catch (error) {
 		cover.setAttribute('src', '../assets/no-image.jpg')
-		cover.setAttribute('data-info', `${results[index].id}`)
 	}
 
 	// Add Content
@@ -161,7 +141,8 @@ async function generateMovieCard(results, index) {
 
 	// Place Items
 	details.append(year, runtime)
-	card.append(rating, cover, title, details)
+	link.append(rating, cover, title, details)
+	card.append(link)
 
 	return card
 }
@@ -285,7 +266,7 @@ async function getMovieDetails() {
 	document.querySelector('.main-info .year span').textContent =
 		data.release_date.slice(0, 4)
 	document.querySelector('.main-info .rating span').textContent =
-		data.vote_average.toFixed(1)
+		Number(data.vote_average.toFixed(1)) || 'Sem avaliações'
 
 	// Convert Runtime to be More Legible
 	const runtime = document.querySelector('.main-info .runtime span')
