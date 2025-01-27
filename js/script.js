@@ -5,7 +5,7 @@ const url = setURL()
 const key = setKey()
 const global = { currentPage: window.location.pathname }
 let moviePage = 1
-let showPage = 1
+let showsPage = 1
 
 function init() {
 	switch (global.currentPage) {
@@ -14,6 +14,16 @@ function init() {
 			displayPopularMovies()
 			displayPopularShows()
 			homePagination()
+			insertSkeletonGrid(
+				document.querySelector('section.movies'),
+				20,
+				'movies-skeleton'
+			)
+			insertSkeletonGrid(
+				document.querySelector('section.shows'),
+				20,
+				'shows-skeleton'
+			)
 			break
 		case '/movie-details.html':
 			getMovieDetails()
@@ -48,36 +58,39 @@ async function getData(endpoint, page = 1) {
 async function displayPopularMovies(page = 1) {
 	const { results } = await getData('trending/movie/week', page)
 	console.log(results)
-	const movieGrid = document.querySelector('#popular-movies')
-	const skeletonGrid = document.querySelector('#movie-skeleton')
+	const movieGrid = document.createElement('div')
+	movieGrid.classList.add('card-grid')
+	movieGrid.id = 'popular-movies'
+	const skeletonGrid = document.querySelector('#movies-skeleton')
 
 	for (let i = 0; i < results.length; i++) {
 		const card = await generateMovieCard(results, i)
 		movieGrid.append(card)
 
 		if (i === results.length - 1) {
-			movieGrid.style.display = 'grid'
-			skeletonGrid.style.display = 'none'
+			skeletonGrid.replaceWith(movieGrid)
 		}
 	}
 }
 
 async function displayPopularShows(page = 1) {
 	const { results } = await getData('trending/tv/week', page)
-	const grid = document.querySelector('#popular-shows')
+	const showsGrid = document.createElement('div')
+	showsGrid.classList.add('card-grid')
+	showsGrid.id = 'popular-shows'
 	const skeletonGrid = document.querySelector('#shows-skeleton')
 
 	for (let i = 0; i < results.length; i++) {
 		const card = await generateShowCard(results, i)
-		grid.append(card)
+		showsGrid.append(card)
+
 		if (i === results.length - 1) {
-			grid.style.display = 'grid'
-			skeletonGrid.style.display = 'none'
+			skeletonGrid.replaceWith(showsGrid)
 		}
 	}
 }
 
-function generateElementsForCard(id) {
+function generateElementsForCard(id, isMovie) {
 	// Generate elements
 	const card = document.createElement('div')
 	const rating = document.createElement('div')
@@ -93,14 +106,16 @@ function generateElementsForCard(id) {
 	runtime.id = 'runtime'
 	card.classList.add('card')
 	rating.classList.add('rating')
-	link.setAttribute('href', `./movie-details.html?${id}`)
+	isMovie
+		? link.setAttribute('href', `./movie-details.html?${id}`)
+		: link.setAttribute('href', `./tv-details.html?${id}`)
 
 	return [card, rating, cover, title, details, year, runtime, link]
 }
 
 async function generateMovieCard(results, index) {
 	let [card, rating, cover, title, details, year, runtime, link] =
-		generateElementsForCard(results[index].id)
+		generateElementsForCard(results[index].id, true)
 
 	try {
 		cover.setAttribute(
@@ -129,7 +144,7 @@ async function generateMovieCard(results, index) {
 	}
 
 	// Check rating for color coding
-	if (results[index].vote_average >= 8) {
+	if (results[index].vote_average >= 7) {
 		rating.style.backgroundColor = 'var(--green)'
 	} else if (results[index].vote_average >= 5) {
 		rating.style.backgroundColor = 'var(--yellow)'
@@ -148,8 +163,8 @@ async function generateMovieCard(results, index) {
 }
 
 async function generateShowCard(results, index) {
-	let [card, rating, cover, title, details, year, runtime] =
-		generateElementsForCard()
+	let [card, rating, cover, title, details, year, runtime, link] =
+		generateElementsForCard(results[index].id, false)
 
 	try {
 		cover.setAttribute(
@@ -173,7 +188,7 @@ async function generateShowCard(results, index) {
 		: (runtime.textContent = `${showData.number_of_seasons} temporadas`)
 
 	// Check rating for color coding
-	if (results[index].vote_average >= 8) {
+	if (results[index].vote_average >= 7) {
 		rating.style.backgroundColor = 'var(--green)'
 	} else if (results[index].vote_average >= 5) {
 		rating.style.backgroundColor = 'var(--yellow)'
@@ -183,42 +198,69 @@ async function generateShowCard(results, index) {
 
 	// Place Items
 	details.append(year, runtime)
-	card.append(rating, cover, title, details)
+	link.append(rating, cover, title, details)
+	card.append(link)
 
 	return card
 }
 
+function generateSkeletonGrid(size, id) {
+	const grid = document.createElement('div')
+	const card = document.createElement('div')
+	const poster = document.createElement('div')
+	const details = document.createElement('div')
+
+	grid.id = id
+	grid.classList.add('grid-skeleton')
+	card.classList.add('card-skeleton')
+	poster.classList.add('poster-skeleton')
+	details.classList.add('details-skeleton')
+
+	card.append(poster, details)
+
+	for (let i = 0; i < size; i++) {
+		grid.append(card.cloneNode(true))
+	}
+
+	return grid
+}
+
+function insertSkeletonGrid(appendTo, size, id) {
+	const grid = generateSkeletonGrid(size, id)
+	appendTo.append(grid)
+}
+
 function nextPage(section) {
-	section === 'movie' ? (moviePage += 1) : null
-	section === 'series' ? (showPage += 1) : null
+	section === 'movie' && (moviePage += 1)
+	section === 'series' && (showsPage += 1)
 	const movieGrid = document.querySelector('#popular-movies')
 	const showsGrid = document.querySelector('#popular-shows')
-	const movieSkeletonGrid = document.querySelector('#movie-skeleton')
-	const showsSkeletonGrid = document.querySelector('#shows-skeleton')
 
 	if (section === 'movie') {
-		movieGrid.style.display = 'none'
-		movieSkeletonGrid.style.display = 'grid'
-		movieGrid.innerHTML = ''
+		const skeletonGrid = generateSkeletonGrid(20, 'movies-skeleton')
+		movieGrid.replaceWith(skeletonGrid)
 		displayPopularMovies(moviePage)
 	} else if (section === 'series') {
-		showsGrid.style.display = 'none'
-		showsSkeletonGrid.style.display = 'grid'
-		showsGrid.innerHTML = ''
-		displayPopularShows(showPage)
+		const skeletonGrid = generateSkeletonGrid(20, 'shows-skeleton')
+		showsGrid.replaceWith(skeletonGrid)
+		displayPopularShows(showsPage)
 	}
 }
 
 function preivousPage(section) {
-	section === 'movie' ? (moviePage -= 1) : null
-	section === 'series' ? (showPage -= 1) : null
+	section === 'movie' && (moviePage -= 1)
+	section === 'series' && (showsPage -= 1)
+	const movieGrid = document.querySelector('#popular-movies')
+	const showsGrid = document.querySelector('#popular-shows')
 
 	if (section === 'movie') {
-		document.querySelector('#popular-movies').innerHTML = ''
+		const skeletonGrid = generateSkeletonGrid(20, 'movies-skeleton')
+		movieGrid.replaceWith(skeletonGrid)
 		displayPopularMovies(moviePage)
 	} else if (section === 'series') {
-		document.querySelector('#popular-shows').innerHTML = ''
-		displayPopularShows(showPage)
+		const skeletonGrid = generateSkeletonGrid(20, 'shows-skeleton')
+		showsGrid.replaceWith(skeletonGrid)
+		displayPopularShows(showsPage)
 	}
 }
 
@@ -228,17 +270,17 @@ function homePagination() {
 	const seriesNext = document.querySelector('#forward-show')
 	const seriesPrevious = document.querySelector('#backward-show')
 
-	next.addEventListener('click', (event) => nextPage('movie'))
-	previous.addEventListener('click', (event) => {
+	next.addEventListener('click', () => nextPage('movie'))
+	previous.addEventListener('click', () => {
 		if (moviePage === 1) {
 			alert('Você já está na primeira página')
 		} else {
 			preivousPage('movie')
 		}
 	})
-	seriesNext.addEventListener('click', (event) => nextPage('series'))
-	seriesPrevious.addEventListener('click', (event) => {
-		if (showPage === 1) {
+	seriesNext.addEventListener('click', () => nextPage('series'))
+	seriesPrevious.addEventListener('click', () => {
+		if (showsPage === 1) {
 			alert('Você já está na primeira página')
 		} else {
 			preivousPage('series')
