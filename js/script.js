@@ -14,22 +14,14 @@ function init() {
 			displayPopularMovies()
 			displayPopularShows()
 			homePagination()
-			insertSkeletonGrid(
-				document.querySelector('section.movies'),
-				20,
-				'movies-skeleton'
-			)
-			insertSkeletonGrid(
-				document.querySelector('section.shows'),
-				20,
-				'shows-skeleton'
-			)
+			insertSkeletonGrid(document.querySelector('section.movies'), 20, 'movies-skeleton')
+			insertSkeletonGrid(document.querySelector('section.shows'), 20, 'shows-skeleton')
 			break
 		case '/movie-details.html':
-			getMovieDetails()
+			getDetails()
 			break
 		case '/tv-details.html':
-			console.log('Shows')
+			getDetails('tv')
 			break
 		case '/search.html':
 			console.log('Search')
@@ -46,10 +38,7 @@ async function getData(endpoint, page = 1) {
 		},
 	}
 
-	const res = await fetch(
-		`${url}/${endpoint}?language=pt-BR&page=${page}`,
-		options
-	)
+	const res = await fetch(`${url}/${endpoint}?language=pt-BR&page=${page}`, options)
 	const data = await res.json()
 
 	return data
@@ -113,14 +102,10 @@ function generateElementsForCard(id, isMovie) {
 }
 
 async function generateMovieCard(results, index) {
-	let [card, rating, cover, title, details, year, runtime, link] =
-		generateElementsForCard(results[index].id, true)
+	let [card, rating, cover, title, details, year, runtime, link] = generateElementsForCard(results[index].id, true)
 
 	try {
-		cover.setAttribute(
-			'src',
-			`https://image.tmdb.org/t/p/w500/${results[index].poster_path}`
-		)
+		cover.setAttribute('src', `https://image.tmdb.org/t/p/w500/${results[index].poster_path}`)
 		cover.setAttribute('alt', `Capa do filme: ${results[index].title}`)
 	} catch (error) {
 		cover.setAttribute('src', '../assets/no-image.jpg')
@@ -129,17 +114,14 @@ async function generateMovieCard(results, index) {
 	// Add Content
 	title.textContent = results[index].title
 	year.textContent = results[index].release_date.slice(0, 4) // Only interested in the year (first 4 characters)
-	rating.textContent =
-		Number(results[index].vote_average.toFixed(1)) || 'Sem avaliações'
+	rating.textContent = Number(results[index].vote_average.toFixed(1)) || 'Sem avaliações'
 	let movieData = await getData(`movie/${results[index].id}`)
 	if (movieData.runtime < 60) {
 		runtime.textContent = `${movieData.runtime}min`
 	} else if (movieData.runtime % 60 === 0) {
 		runtime.textContent = `${movieData.runtime / 60}h`
 	} else {
-		runtime.textContent = `${Math.floor(movieData.runtime / 60)}h ${
-			movieData.runtime % 60
-		}min`
+		runtime.textContent = `${Math.floor(movieData.runtime / 60)}h ${movieData.runtime % 60}min`
 	}
 
 	// Check rating for color coding
@@ -162,14 +144,10 @@ async function generateMovieCard(results, index) {
 }
 
 async function generateShowCard(results, index) {
-	let [card, rating, cover, title, details, year, runtime, link] =
-		generateElementsForCard(results[index].id, false)
+	let [card, rating, cover, title, details, year, runtime, link] = generateElementsForCard(results[index].id, false)
 
 	try {
-		cover.setAttribute(
-			'src',
-			`https://image.tmdb.org/t/p/w500/${results[index].poster_path}`
-		)
+		cover.setAttribute('src', `https://image.tmdb.org/t/p/w500/${results[index].poster_path}`)
 		cover.setAttribute('alt', `Capa da série: ${results[index].name}`)
 		cover.setAttribute('data-info', `${results[index].id}`)
 	} catch (error) {
@@ -287,37 +265,47 @@ function homePagination() {
 	})
 }
 
-async function getMovieDetails() {
+async function getDetails(type = 'movie') {
 	const id = window.location.search.slice(1)
-	const data = await getData(`/movie/${id}`)
+	const data = await getData(`/${type}/${id}`)
 
 	// Set Poster
 	const poster = document.createElement('img')
-	poster.setAttribute(
-		'src',
-		`https://image.tmdb.org/t/p/w500/${data.poster_path}`
-	)
+	data.poster_path
+		? poster.setAttribute('src', `https://image.tmdb.org/t/p/w500/${data.poster_path}`)
+		: poster.setAttribute('src', `./assets/no-image.jpg`)
 	document.querySelector('.poster').appendChild(poster)
 
+	// Query DOM
+	const title = document.querySelector('.content h1')
+	const overview = document.querySelector('.content p')
+	const year = document.querySelector('.main-info .year span')
+	const runtime = document.querySelector('.main-info .runtime span')
+
 	// Add Info
-	document.querySelector('.content h1').textContent = data.title
-	document.querySelector('.content p').textContent =
-		data.overview || '[Descrição indisponível]'
-	document.querySelector('.main-info .year span').textContent =
-		data.release_date.slice(0, 4)
+	title.textContent = data.title || data.name
+	overview.textContent = data.overview || '[Descrição indisponível]'
 	document.querySelector('.main-info .rating span').textContent =
 		Number(data.vote_average.toFixed(1)) || 'Sem avaliações'
+	if (type === 'movie') {
+		year.textContent = data.release_date.slice(0, 4)
+	} else {
+		year.textContent = yearSpan(data)
+	}
 
 	// Convert Runtime to be More Legible
-	const runtime = document.querySelector('.main-info .runtime span')
-	if (data.runtime < 60) {
-		runtime.textContent = `${data.runtime}min`
-	} else if (data.runtime % 60 === 0) {
-		runtime.textContent = `${data.runtime / 60}h`
+	if (data.runtime) {
+		if (data.runtime < 60) {
+			runtime.textContent = `${data.runtime}min`
+		} else if (data.runtime % 60 === 0) {
+			runtime.textContent = `${data.runtime / 60}h`
+		} else {
+			runtime.textContent = `${Math.floor(data.runtime / 60)}h ${data.runtime % 60}min`
+		}
 	} else {
-		runtime.textContent = `${Math.floor(data.runtime / 60)}h ${
-			data.runtime % 60
-		}min`
+		data.number_of_seasons > 1
+			? (runtime.textContent = `${data.number_of_seasons} temporadas`)
+			: (runtime.textContent = `${data.number_of_seasons} temporada`)
 	}
 
 	// Add Genres
@@ -336,7 +324,7 @@ async function getMovieDetails() {
 	document.querySelector('main').appendChild(overlay)
 
 	// Add Cast
-	const castObj = await getData(`/movie/${id}/credits`)
+	const castObj = await getData(`/${type}/${id}/credits`)
 	let castArr
 	castObj.cast.length ? (castArr = castObj.cast) : (castArr = castObj.crew)
 	castArr.slice(0, 4).forEach((actor) => {
@@ -349,11 +337,11 @@ async function getMovieDetails() {
 
 	insertSkeletonGrid(document.querySelector('#similar'), 5, 'similar-skeleton')
 
-	displaySimilarMovies(id)
+	displaySimilar(id, type)
 }
 
-async function displaySimilarMovies(id) {
-	const { results } = await getData(`/movie/${id}/similar`)
+async function displaySimilar(id, type) {
+	const { results } = await getData(`/${type}/${id}/recommendations`)
 
 	const movieGrid = document.createElement('div')
 	movieGrid.classList.add('card-grid')
@@ -361,13 +349,31 @@ async function displaySimilarMovies(id) {
 	const skeletonGrid = document.querySelector('#similar-skeleton')
 
 	results.slice(0, 5).forEach(async (foo, index) => {
-		const card = await generateMovieCard(results, index)
+		let card
+		type === 'movie'
+			? (card = await generateMovieCard(results, index))
+			: (card = await generateShowCard(results, index))
 		movieGrid.append(card)
 
 		if (index === 4) {
 			skeletonGrid.replaceWith(movieGrid)
 		}
 	})
+}
+
+function yearSpan(show) {
+	console.log(show)
+
+	const start = Number(show.first_air_date.slice(0, 4))
+	const end = Number(show.last_air_date.slice(0, 4))
+	console.log(start)
+	console.log(end)
+
+	if (start === end) {
+		return start
+	} else {
+		return `${start} à ${end}`
+	}
 }
 
 // Event Listeners
