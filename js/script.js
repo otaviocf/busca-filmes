@@ -104,16 +104,18 @@ function generateElementsForCard(id, isMovie) {
 async function generateMovieCard(results, index) {
 	let [card, rating, cover, title, details, year, runtime, link] = generateElementsForCard(results[index].id, true)
 
-	try {
+	if (results[index].poster_path) {
 		cover.setAttribute('src', `https://image.tmdb.org/t/p/w500/${results[index].poster_path}`)
-		cover.setAttribute('alt', `Capa do filme: ${results[index].title}`)
-	} catch (error) {
+	} else {
 		cover.setAttribute('src', '../assets/no-image.jpg')
 	}
+	cover.setAttribute('alt', `Capa da série: ${results[index].title}`)
 
 	// Add Content
 	title.textContent = results[index].title
-	year.textContent = results[index].release_date.slice(0, 4) // Only interested in the year (first 4 characters)
+	results[index].release_date
+		? (year.textContent = results[index].release_date.slice(0, 4))
+		: (year.textContent = '????')
 	rating.textContent = Number(results[index].vote_average.toFixed(1)) || 'Sem avaliações'
 	let movieData = await getData(`movie/${results[index].id}`)
 	if (movieData.runtime < 60) {
@@ -146,14 +148,12 @@ async function generateMovieCard(results, index) {
 async function generateShowCard(results, index) {
 	let [card, rating, cover, title, details, year, runtime, link] = generateElementsForCard(results[index].id, false)
 
-	try {
+	if (results[index].poster_path) {
 		cover.setAttribute('src', `https://image.tmdb.org/t/p/w500/${results[index].poster_path}`)
-		cover.setAttribute('alt', `Capa da série: ${results[index].name}`)
-		cover.setAttribute('data-info', `${results[index].id}`)
-	} catch (error) {
+	} else {
 		cover.setAttribute('src', '../assets/no-image.jpg')
-		cover.setAttribute('data-info', `${results[index].id}`)
 	}
+	cover.setAttribute('alt', `Capa da série: ${results[index].name}`)
 
 	// Add Content
 	title.textContent = results[index].name
@@ -268,12 +268,13 @@ function homePagination() {
 async function getDetails(type = 'movie') {
 	const id = window.location.search.slice(1)
 	const data = await getData(`/${type}/${id}`)
+	console.log(data)
 
 	// Set Poster
 	const poster = document.createElement('img')
 	data.poster_path
 		? poster.setAttribute('src', `https://image.tmdb.org/t/p/w500/${data.poster_path}`)
-		: poster.setAttribute('src', `./assets/no-image.jpg`)
+		: poster.setAttribute('src', `../assets/no-image.jpg`)
 	document.querySelector('.poster').appendChild(poster)
 
 	// Query DOM
@@ -288,13 +289,15 @@ async function getDetails(type = 'movie') {
 	document.querySelector('.main-info .rating span').textContent =
 		Number(data.vote_average.toFixed(1)) || 'Sem avaliações'
 	if (type === 'movie') {
-		year.textContent = data.release_date.slice(0, 4)
+		if (data.release_date) year.textContent = data.release_date.slice(0, 4)
+		else year.textContent = 'Desconhecido'
 	} else {
 		year.textContent = yearSpan(data)
 	}
 
 	// Convert Runtime to be More Legible
 	if (data.runtime) {
+		// Places runtime if it is a movie
 		if (data.runtime < 60) {
 			runtime.textContent = `${data.runtime}min`
 		} else if (data.runtime % 60 === 0) {
@@ -302,20 +305,31 @@ async function getDetails(type = 'movie') {
 		} else {
 			runtime.textContent = `${Math.floor(data.runtime / 60)}h ${data.runtime % 60}min`
 		}
+	} else if (data.runtime === 0) {
+		// Handles case where runtime is unknown
+		runtime.textContent = 'Desconhecido'
 	} else {
+		// Switches to number of seasons if (runtime === undefined)
 		data.number_of_seasons > 1
 			? (runtime.textContent = `${data.number_of_seasons} temporadas`)
 			: (runtime.textContent = `${data.number_of_seasons} temporada`)
 	}
 
 	// Add Genres
-	data.genres.forEach((genre) => {
+	if (data.genres.length) {
+		data.genres.forEach((genre) => {
+			const bubble = document.createElement('div')
+			bubble.classList.add('bubble')
+			bubble.setAttribute('data-id', genre.id)
+			bubble.textContent = genre.name
+			document.querySelector('.bubble-group-genres').appendChild(bubble)
+		})
+	} else {
 		const bubble = document.createElement('div')
 		bubble.classList.add('bubble')
-		bubble.setAttribute('data-id', genre.id)
-		bubble.textContent = genre.name
+		bubble.textContent = 'Desconhecido'
 		document.querySelector('.bubble-group-genres').appendChild(bubble)
-	})
+	}
 
 	// Add Backdrop
 	const overlay = document.createElement('div')
@@ -327,13 +341,20 @@ async function getDetails(type = 'movie') {
 	const castObj = await getData(`/${type}/${id}/credits`)
 	let castArr
 	castObj.cast.length ? (castArr = castObj.cast) : (castArr = castObj.crew)
-	castArr.slice(0, 4).forEach((actor) => {
+	if (castArr.length) {
+		castArr.slice(0, 4).forEach((actor) => {
+			const bubble = document.createElement('div')
+			bubble.classList.add('bubble')
+			bubble.setAttribute('data-actor', actor.name)
+			bubble.textContent = actor.name
+			document.querySelector('.bubble-group-actors').appendChild(bubble)
+		})
+	} else {
 		const bubble = document.createElement('div')
 		bubble.classList.add('bubble')
-		bubble.setAttribute('data-actor', actor.name)
-		bubble.textContent = actor.name
+		bubble.textContent = 'Desconhecido'
 		document.querySelector('.bubble-group-actors').appendChild(bubble)
-	})
+	}
 
 	insertSkeletonGrid(document.querySelector('#similar'), 5, 'similar-skeleton')
 
@@ -369,11 +390,13 @@ function yearSpan(show) {
 	console.log(start)
 	console.log(end)
 
-	if (start === end) {
-		return start
-	} else {
-		return `${start} à ${end}`
-	}
+	if (start) {
+		if (start === end) {
+			return start
+		} else {
+			return `${start} à ${end}`
+		}
+	} else return 'Desconhecido'
 }
 
 // Event Listeners
