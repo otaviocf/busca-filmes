@@ -7,7 +7,7 @@ const global = { currentPage: window.location.pathname }
 let moviePage = 1
 let showsPage = 1
 
-function init() {
+async function init() {
 	switch (global.currentPage) {
 		case '/':
 		case '/index.html':
@@ -24,12 +24,15 @@ function init() {
 			getDetails('tv')
 			break
 		case '/search.html':
-			console.log('Search')
+			const query = new URLSearchParams(window.location.search).get('q')
+			insertSkeletonGrid(document.querySelector('section.movies'), 20, 'results-skeleton')
+			displaySearchResults(1, query)
+			console.log(query)
 			break
 	}
 }
 
-async function getData(endpoint, page = 1) {
+async function getData(endpoint, page = 1, query = '') {
 	const options = {
 		method: 'GET',
 		headers: {
@@ -38,7 +41,7 @@ async function getData(endpoint, page = 1) {
 		},
 	}
 
-	const res = await fetch(`${url}/${endpoint}?language=pt-BR&page=${page}`, options)
+	const res = await fetch(`${url}/${endpoint}?language=pt-BR&page=${page}&query=${query}`, options)
 	const data = await res.json()
 
 	return data
@@ -397,6 +400,31 @@ function yearSpan(show) {
 			return `${start} à ${end}`
 		}
 	} else return 'Desconhecido'
+}
+
+async function queryAPI(query) {
+	const data = await getData('/search/movie', 1, query)
+
+	return data
+}
+
+async function displaySearchResults(page = 1, query) {
+	const { results } = await getData('/search/movie', 1, query)
+	console.log(results)
+	console.log(query)
+	const movieGrid = document.createElement('div')
+	movieGrid.classList.add('card-grid')
+	movieGrid.id = 'popular-movies'
+	const skeletonGrid = document.querySelector('#results-skeleton')
+
+	for (let i = 0; i < results.length; i++) {
+		const card = await generateMovieCard(results, i)
+		movieGrid.append(card)
+
+		if (i === results.length - 1) {
+			skeletonGrid.replaceWith(movieGrid)
+		}
+	}
 }
 
 // Event Listeners

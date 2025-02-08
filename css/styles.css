@@ -79,7 +79,7 @@ header {
 			border: none;
 			border: 2px solid var(--color-light);
 			padding-left: 2rem;
-			color: var(--color-light);
+			color: #fff;
 			transition: box-shadow 0.3s;
 
 			&:focus {
