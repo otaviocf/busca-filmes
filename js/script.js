@@ -119,7 +119,12 @@ async function generateMovieCard(results, index) {
 	results[index].release_date
 		? (year.textContent = results[index].release_date.slice(0, 4))
 		: (year.textContent = '????')
-	rating.textContent = Number(results[index].vote_average.toFixed(1)) || 'Sem avaliações'
+	const voteAverage = results[index].vote_average
+	if (typeof voteAverage === 'number' && !isNaN(voteAverage)) {
+		rating.textContent = Number(voteAverage.toFixed(1))
+	} else {
+		rating.textContent = 'Sem avaliações'
+	}
 	let movieData = await getData(`movie/${results[index].id}`)
 	if (movieData.runtime < 60) {
 		runtime.textContent = `${movieData.runtime}min`
@@ -161,7 +166,12 @@ async function generateShowCard(results, index) {
 	// Add Content
 	title.textContent = results[index].name
 	year.textContent = results[index].first_air_date.slice(0, 4) // Only interested in the year (first 4 characters)
-	rating.textContent = results[index].vote_average.toFixed(1)
+	const voteAverage = results[index].vote_average
+	if (typeof voteAverage === 'number' && !isNaN(voteAverage)) {
+		rating.textContent = Number(voteAverage.toFixed(1))
+	} else {
+		rating.textContent = 'Sem avaliações'
+	}
 	let showData = await getData(`tv/${results[index].id}`)
 	showData.number_of_seasons === 1
 		? (runtime.textContent = `${showData.number_of_seasons} temporada`)
@@ -172,6 +182,8 @@ async function generateShowCard(results, index) {
 		rating.style.backgroundColor = 'var(--green)'
 	} else if (results[index].vote_average >= 5) {
 		rating.style.backgroundColor = 'var(--yellow)'
+	} else if (results[index].vote_average === 0) {
+		rating.style.backgroundColor = 'rgb(79, 62, 54)'
 	} else {
 		rating.style.backgroundColor = 'var(--red)'
 	}
@@ -405,32 +417,65 @@ function yearSpan(show) {
 		} else {
 			return `${start} à ${end}`
 		}
-	} else return 'Desconhecido'
+	} else {
+		return 'Desconhecido'
+	}
 }
 
-async function queryAPI(query) {
-	const data = await getData('/search/movie', 1, query)
+async function getSearchResults(query) {
+	const { results: movies } = await getData('/search/movie', 1, query)
+	const { results: shows } = await getData('/search/tv', 1, query)
+	console.log(movies, shows)
 
-	return data
+	return {
+		movies,
+		shows,
+	}
+}
+
+async function generateSearchGrid(query, type) {
+	const data = await getSearchResults(query)
+	let results
+	type === 'movies' ? (results = data['movies']) : (results = data['shows'])
+
+	const cardGrid = document.createElement('div')
+	cardGrid.classList.add('card-grid')
+
+	if (type === 'movies') {
+		for (let i = 0; i < results.length; i++) {
+			const card = await generateMovieCard(results, i)
+			cardGrid.append(card)
+		}
+	} else {
+		for (let i = 0; i < results.length; i++) {
+			const card = await generateShowCard(results, i)
+			cardGrid.append(card)
+		}
+	}
+
+	return cardGrid
 }
 
 async function displaySearchResults(page = 1, query) {
-	const { results } = await getData('/search/movie', 1, query)
-	console.log(results)
-	console.log(query)
-	const movieGrid = document.createElement('div')
-	movieGrid.classList.add('card-grid')
-	movieGrid.id = 'popular-movies'
+	const movieGrid = await generateSearchGrid(query, 'movies')
+	movieGrid.id = 'movies'
+	const showsGrid = await generateSearchGrid(query, 'shows')
+	showsGrid.id = 'shows'
+
 	const skeletonGrid = document.querySelector('#results-skeleton')
+	skeletonGrid.replaceWith(movieGrid)
 
-	for (let i = 0; i < results.length; i++) {
-		const card = await generateMovieCard(results, i)
-		movieGrid.append(card)
-
-		if (i === results.length - 1) {
-			skeletonGrid.replaceWith(movieGrid)
-		}
-	}
+	let options = document.querySelectorAll('.radio-option')
+	console.log(options)
+	options.forEach((option) => {
+		option.addEventListener('change', (event) => {
+			if (event.target.id === 'tab-1') {
+				document.querySelector('#shows').replaceWith(movieGrid)
+			} else {
+				document.querySelector('#movies').replaceWith(showsGrid)
+			}
+		})
+	})
 }
 
 // Event Listeners
