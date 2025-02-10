@@ -365,7 +365,13 @@ async function getDetails(type = 'movie') {
 }
 
 async function displaySimilar(id, type) {
-	const { results } = await getData(`/${type}/${id}/recommendations`)
+	let { results } = await getData(`/${type}/${id}/recommendations`)
+
+	// Default to similar movies if there are no recommendations
+	if (!results.length) {
+		let data = await getData(`/${type}/${id}/similar`)
+		results = data['results']
+	}
 
 	const movieGrid = document.createElement('div')
 	movieGrid.classList.add('card-grid')
