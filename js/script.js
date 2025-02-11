@@ -27,7 +27,6 @@ async function init() {
 			const query = new URLSearchParams(window.location.search).get('q')
 			insertSkeletonGrid(document.querySelector('section.movies'), 20, 'results-skeleton')
 			displaySearchResults(1, query)
-			console.log(query)
 			break
 	}
 }
@@ -425,7 +424,6 @@ function yearSpan(show) {
 async function getSearchResults(query) {
 	const { results: movies } = await getData('/search/movie', 1, query)
 	const { results: shows } = await getData('/search/tv', 1, query)
-	console.log(movies, shows)
 
 	return {
 		movies,
@@ -457,16 +455,22 @@ async function generateSearchGrid(query, type) {
 }
 
 async function displaySearchResults(page = 1, query) {
+	const moviesTab = document.querySelector('#tab-1')
+	moviesTab.checked = true
+
 	const movieGrid = await generateSearchGrid(query, 'movies')
 	movieGrid.id = 'movies'
 	const showsGrid = await generateSearchGrid(query, 'shows')
 	showsGrid.id = 'shows'
 
 	const skeletonGrid = document.querySelector('#results-skeleton')
-	skeletonGrid.replaceWith(movieGrid)
+	if (moviesTab.checked) {
+		skeletonGrid.replaceWith(movieGrid)
+	} else {
+		skeletonGrid.replaceWith(showsGrid)
+	}
 
 	let options = document.querySelectorAll('.radio-option')
-	console.log(options)
 	options.forEach((option) => {
 		option.addEventListener('change', (event) => {
 			if (event.target.id === 'tab-1') {
