@@ -119,7 +119,7 @@ async function generateMovieCard(results, index) {
 		? (year.textContent = results[index].release_date.slice(0, 4))
 		: (year.textContent = '????')
 	const voteAverage = results[index].vote_average
-	if (typeof voteAverage === 'number' && !isNaN(voteAverage)) {
+	if (typeof voteAverage === 'number' && !isNaN(voteAverage) && voteAverage !== 0) {
 		rating.textContent = Number(voteAverage.toFixed(1))
 	} else {
 		rating.textContent = 'Sem avaliações'
@@ -166,7 +166,7 @@ async function generateShowCard(results, index) {
 	title.textContent = results[index].name
 	year.textContent = results[index].first_air_date.slice(0, 4) // Only interested in the year (first 4 characters)
 	const voteAverage = results[index].vote_average
-	if (typeof voteAverage === 'number' && !isNaN(voteAverage)) {
+	if (typeof voteAverage === 'number' && !isNaN(voteAverage) && voteAverage !== 0) {
 		rating.textContent = Number(voteAverage.toFixed(1))
 	} else {
 		rating.textContent = 'Sem avaliações'
@@ -425,42 +425,43 @@ async function getSearchResults(query) {
 	const { results: movies } = await getData('/search/movie', 1, query)
 	const { results: shows } = await getData('/search/tv', 1, query)
 
+	const temp1 = await getData('/search/movie', 1, query)
+	const temp2 = await getData('/search/tv', 1, query)
+	console.log(temp1, temp2)
+
 	return {
 		movies,
 		shows,
 	}
 }
 
-async function generateSearchGrid(query, type) {
-	const data = await getSearchResults(query)
-	let results
-	type === 'movies' ? (results = data['movies']) : (results = data['shows'])
+async function generateSearchGrid(query) {
+	const { movies, shows } = await getSearchResults(query)
 
-	const cardGrid = document.createElement('div')
-	cardGrid.classList.add('card-grid')
+	const moviesGrid = document.createElement('div')
+	const showsGrid = document.createElement('div')
+	moviesGrid.classList.add('card-grid')
+	showsGrid.classList.add('card-grid')
 
-	if (type === 'movies') {
-		for (let i = 0; i < results.length; i++) {
-			const card = await generateMovieCard(results, i)
-			cardGrid.append(card)
-		}
-	} else {
-		for (let i = 0; i < results.length; i++) {
-			const card = await generateShowCard(results, i)
-			cardGrid.append(card)
-		}
+	for (let i = 0; i < movies.length; i++) {
+		const card = await generateMovieCard(movies, i)
+		moviesGrid.append(card)
 	}
 
-	return cardGrid
+	for (let i = 0; i < shows.length; i++) {
+		const card = await generateShowCard(shows, i)
+		showsGrid.append(card)
+	}
+
+	return { moviesGrid, showsGrid }
 }
 
 async function displaySearchResults(page = 1, query) {
 	const moviesTab = document.querySelector('#tab-1')
 	moviesTab.checked = true
 
-	const movieGrid = await generateSearchGrid(query, 'movies')
+	const { moviesGrid: movieGrid, showsGrid: showsGrid } = await generateSearchGrid(query)
 	movieGrid.id = 'movies'
-	const showsGrid = await generateSearchGrid(query, 'shows')
 	showsGrid.id = 'shows'
 
 	const skeletonGrid = document.querySelector('#results-skeleton')
