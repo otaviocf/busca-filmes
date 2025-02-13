@@ -109,6 +109,7 @@ function generateElementsForCard(id, isMovie) {
 }
 
 async function generateMovieCard(results, index) {
+	console.log(results)
 	let [card, rating, cover, title, details, year, runtime, link] = generateElementsForCard(results[index].id, true)
 
 	if (results[index].poster_path) {
@@ -487,52 +488,11 @@ async function displaySearchResults(query) {
 	})
 }
 
-async function searchPagination(query) {
-	const previous = document.querySelector('#backwards')
-	const next = document.querySelector('#forwards')
-	const moviesTab = document.querySelector('#tab-1')
-	const showsTab = document.querySelector('#tab-2')
-
+async function searchPagination() {
 	const { total_pages: totalPagesMovie } = await getData('/search/movie', moviePageSearch, query)
 	const { total_pages: totalPagesShows } = await getData('/search/tv', showsPageSearch, query)
 
-	const currentTab = getCurrentTab()
-
-	if (moviePageSearch >= 1 && currentTab === moviesTab) {
-		next.addEventListener('click', nextPageSearch)
-		previous.style.opacity = 0.2
-		previous.style.cursor = 'default'
-		previous.removeEventListener('click', previousPageSearch)
-
-		console.log('movies page:', moviePageSearch)
-		console.log('shows page:', showsPageSearch)
-	} else if (moviePageSearch <= totalPagesMovie && currentTab === 'movies') {
-		previous.addEventListener('click', previousPageSearch)
-		next.style.opacity = 0.2
-		next.style.cursor = 'default'
-		next.removeEventListener('click', nextPageSearch)
-
-		console.log('movies page:', moviePageSearch)
-		console.log('shows page:', showsPageSearch)
-	}
-
-	if (showsPageSearch >= 1 && currentTab === showsTab) {
-		next.addEventListener('click', nextPageSearch)
-		previous.style.opacity = 0.2
-		previous.style.cursor = 'default'
-		previous.removeEventListener('click', previousPageSearch)
-
-		console.log('movies page:', moviePageSearch)
-		console.log('shows page:', showsPageSearch)
-	} else if (showsPageSearch <= totalPagesShows && currentTab === showsTab) {
-		previous.addEventListener('click', previousPageSearch)
-		next.style.opacity = 0.2
-		next.style.cursor = 'default'
-		next.removeEventListener('click', nextPageSearch)
-
-		console.log('movies page:', moviePageSearch)
-		console.log('shows page:', showsPageSearch)
-	}
+	arrowWatchdog(moviePageSearch, totalPagesMovie)
 }
 
 async function updateSearchPage(isNext) {
@@ -549,11 +509,16 @@ async function updateSearchPage(isNext) {
 		currentGrid.replaceWith(skeleton)
 
 		moviePageSearch++
-		const { results: movies } = await getData('/search/movie', moviePageSearch, query)
+		const data = await getData('/search/movie', moviePageSearch, query)
+		const movies = data.results
+		const totalPages = data.total_pages
+		arrowWatchdog(moviePageSearch, totalPages)
 
-		// IIFE for showsGrid if necessary
-		const showsGrid = await (async function () {
-			const { results: shows } = await getData('/search/tv', showsPageSearch, query)
+		// IIFE for showsGrid
+		const showsData = await (async function () {
+			const data = await getData('/search/tv', showsPageSearch, query)
+			const shows = data.results
+			const total_pages = data.total_pages
 
 			// Generate grid
 			const showsGrid = document.createElement('div')
@@ -565,7 +530,7 @@ async function updateSearchPage(isNext) {
 				showsGrid.append(card)
 			}
 
-			return showsGrid
+			return { showsGrid, total_pages }
 		})()
 
 		// Update tab listeners
@@ -579,8 +544,10 @@ async function updateSearchPage(isNext) {
 			option.addEventListener('change', (event) => {
 				if (event.target.id === 'tab-1') {
 					document.querySelector('.current').replaceWith(moviesGrid)
+					arrowWatchdog(moviePageSearch, totalPages)
 				} else {
-					document.querySelector('.current').replaceWith(showsGrid)
+					document.querySelector('.current').replaceWith(showsData.showsGrid)
+					arrowWatchdog(showsPageSearch, showsData.total_pages)
 				}
 			})
 		})
@@ -606,23 +573,28 @@ async function updateSearchPage(isNext) {
 		currentGrid.replaceWith(skeleton)
 
 		showsPageSearch++
-		const { results: shows } = await getData('/search/tv', showsPageSearch, query)
+		const data = await getData('/search/tv', showsPageSearch, query)
+		const shows = data.results
+		const totalPages = data.total_pages
+		arrowWatchdog(showsPageSearch, totalPages)
 
-		// IIFE for moviesGrid if necessary
-		const moviesGrid = await (async function () {
-			const { results: shows } = await getData('/search/movie', moviePageSearch, query)
+		// IIFE for moviesGrid
+		const moviesData = await (async function () {
+			const data = await getData('/search/movie', moviePageSearch, query)
+			const movies = data.results
+			const total_pages = data.total_pages
 
 			// Generate grid
 			const moviesGrid = document.createElement('div')
 			moviesGrid.classList.add('card-grid', 'current')
 			moviesGrid.id = 'shows'
 
-			for (let i = 0; i < shows.length; i++) {
-				const card = await generateMovieCard(shows, i)
+			for (let i = 0; i < movies.length; i++) {
+				const card = await generateMovieCard(movies, i)
 				moviesGrid.append(card)
 			}
 
-			return moviesGrid
+			return { moviesGrid, total_pages }
 		})()
 
 		// Update tab listeners
@@ -635,9 +607,11 @@ async function updateSearchPage(isNext) {
 		options.forEach((option) => {
 			option.addEventListener('change', (event) => {
 				if (event.target.id === 'tab-1') {
-					document.querySelector('.current').replaceWith(moviesGrid)
+					document.querySelector('.current').replaceWith(moviesData.moviesGrid)
+					arrowWatchdog(moviePageSearch, moviesData.total_pages)
 				} else {
 					document.querySelector('.current').replaceWith(showsGrid)
+					arrowWatchdog(showsPageSearch, totalPages)
 				}
 			})
 		})
@@ -663,11 +637,16 @@ async function updateSearchPage(isNext) {
 		currentGrid.replaceWith(skeleton)
 
 		moviePageSearch--
-		const { results: movies } = await getData('/search/movie', moviePageSearch, query)
+		const data = await getData('/search/movie', moviePageSearch, query)
+		const movies = data.results
+		const totalPages = data.total_pages
+		arrowWatchdog(moviePageSearch, totalPages)
 
-		// IIFE for showsGrid if necessary
-		const showsGrid = await (async function () {
-			const { results: shows } = await getData('/search/tv', showsPageSearch, query)
+		// IIFE for showsGrid
+		const showsData = await (async function () {
+			const data = await getData('/search/tv', showsPageSearch, query)
+			const shows = data.results
+			const total_pages = data.total_pages
 
 			// Generate grid
 			const showsGrid = document.createElement('div')
@@ -679,7 +658,7 @@ async function updateSearchPage(isNext) {
 				showsGrid.append(card)
 			}
 
-			return showsGrid
+			return { showsGrid, total_pages }
 		})()
 
 		// Update tab listeners
@@ -693,8 +672,10 @@ async function updateSearchPage(isNext) {
 			option.addEventListener('change', (event) => {
 				if (event.target.id === 'tab-1') {
 					document.querySelector('.current').replaceWith(moviesGrid)
+					arrowWatchdog(moviePageSearch, totalPages)
 				} else {
-					document.querySelector('.current').replaceWith(showsGrid)
+					document.querySelector('.current').replaceWith(showsData.showsGrid)
+					arrowWatchdog(showsPageSearch, showsData.total_pages)
 				}
 			})
 		})
@@ -720,23 +701,28 @@ async function updateSearchPage(isNext) {
 		currentGrid.replaceWith(skeleton)
 
 		showsPageSearch--
-		const { results: shows } = await getData('/search/tv', showsPageSearch, query)
+		const data = await getData('/search/tv', showsPageSearch, query)
+		const shows = data.results
+		const totalPages = data.total_pages
+		arrowWatchdog(showsPageSearch, totalPages)
 
-		// IIFE for moviesGrid if necessary
-		const moviesGrid = await (async function () {
-			const { results: shows } = await getData('/search/movies', moviePageSearch, query)
+		// IIFE for moviesGrid
+		const moviesData = await (async function () {
+			const data = await getData('/search/movie', moviePageSearch, query)
+			const movies = data.results
+			const total_pages = data.total_pages
 
 			// Generate grid
 			const moviesGrid = document.createElement('div')
 			moviesGrid.classList.add('card-grid', 'current')
 			moviesGrid.id = 'shows'
 
-			for (let i = 0; i < shows.length; i++) {
-				const card = await generateMovieCard(shows, i)
+			for (let i = 0; i < movies.length; i++) {
+				const card = await generateMovieCard(movies, i)
 				moviesGrid.append(card)
 			}
 
-			return moviesGrid
+			return { moviesGrid, total_pages }
 		})()
 
 		// Update tab listeners
@@ -749,9 +735,11 @@ async function updateSearchPage(isNext) {
 		options.forEach((option) => {
 			option.addEventListener('change', (event) => {
 				if (event.target.id === 'tab-1') {
-					document.querySelector('.current').replaceWith(moviesGrid)
+					document.querySelector('.current').replaceWith(moviesData.moviesGrid)
+					arrowWatchdog(moviePageSearch, moviesData.total_pages)
 				} else {
 					document.querySelector('.current').replaceWith(showsGrid)
+					arrowWatchdog(showsPageSearch, totalPages)
 				}
 			})
 		})
@@ -789,6 +777,36 @@ function getCurrentTab() {
 	} else {
 		return showsTab
 	}
+}
+
+function arrowWatchdog(currentPage, totalPages) {
+	const next = document.querySelector('#forwards')
+	const previous = document.querySelector('#backwards')
+
+	if (currentPage === totalPages) {
+		next.classList.remove('page-active')
+		next.removeEventListener('click', nextPageSearch)
+
+		previous.classList.add('page-active')
+		previous.addEventListener('click', previousPageSearch)
+	}
+
+	if (currentPage > 1) {
+		previous.classList.add('page-active')
+		previous.addEventListener('click', previousPageSearch)
+	}
+
+	if (currentPage < totalPages) {
+		next.classList.add('page-active')
+		next.addEventListener('click', nextPageSearch)
+	}
+
+	if (currentPage === 1) {
+		previous.classList.remove('page-active')
+		previous.removeEventListener('click', previousPageSearch)
+	}
+
+	console.log(currentPage, totalPages)
 }
 
 // Event Listeners
