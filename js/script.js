@@ -4,8 +4,13 @@ const token = setToken()
 const url = setURL()
 const key = setKey()
 const global = { currentPage: window.location.pathname }
+const query = new URLSearchParams(window.location.search).get('q')
+
 let moviePage = 1
 let showsPage = 1
+
+let moviePageSearch = 1
+let showsPageSearch = 1
 
 async function init() {
 	switch (global.currentPage) {
@@ -24,9 +29,9 @@ async function init() {
 			getDetails('tv')
 			break
 		case '/search.html':
-			const query = new URLSearchParams(window.location.search).get('q')
 			insertSkeletonGrid(document.querySelector('section.movies'), 20, 'results-skeleton')
-			displaySearchResults(1, query)
+			displaySearchResults(query, moviePageSearch, showsPageSearch)
+			searchPagination(query)
 			break
 	}
 }
@@ -204,6 +209,7 @@ function generateSkeletonGrid(size, id) {
 	grid.id = id
 	grid.classList.add('grid-skeleton')
 	card.classList.add('card-skeleton')
+	card.classList.add('current')
 	poster.classList.add('poster-skeleton')
 	details.classList.add('details-skeleton')
 
@@ -238,7 +244,7 @@ function nextPage(section) {
 	}
 }
 
-function preivousPage(section) {
+function previousPage(section) {
 	section === 'movie' && (moviePage -= 1)
 	section === 'series' && (showsPage -= 1)
 	const movieGrid = document.querySelector('#popular-movies')
@@ -266,7 +272,7 @@ function homePagination() {
 		if (moviePage === 1) {
 			alert('Você já está na primeira página')
 		} else {
-			preivousPage('movie')
+			previousPage('movie')
 		}
 	})
 	seriesNext.addEventListener('click', () => nextPage('series'))
@@ -274,7 +280,7 @@ function homePagination() {
 		if (showsPage === 1) {
 			alert('Você já está na primeira página')
 		} else {
-			preivousPage('series')
+			previousPage('series')
 		}
 	})
 }
@@ -421,13 +427,11 @@ function yearSpan(show) {
 	}
 }
 
+// Search Page
+
 async function getSearchResults(query) {
 	const { results: movies } = await getData('/search/movie', 1, query)
 	const { results: shows } = await getData('/search/tv', 1, query)
-
-	const temp1 = await getData('/search/movie', 1, query)
-	const temp2 = await getData('/search/tv', 1, query)
-	console.log(temp1, temp2)
 
 	return {
 		movies,
@@ -435,13 +439,13 @@ async function getSearchResults(query) {
 	}
 }
 
-async function generateSearchGrid(query) {
+async function generateSearchGrid() {
 	const { movies, shows } = await getSearchResults(query)
 
 	const moviesGrid = document.createElement('div')
 	const showsGrid = document.createElement('div')
-	moviesGrid.classList.add('card-grid')
-	showsGrid.classList.add('card-grid')
+	moviesGrid.classList.add('card-grid', 'current')
+	showsGrid.classList.add('card-grid', 'current')
 
 	for (let i = 0; i < movies.length; i++) {
 		const card = await generateMovieCard(movies, i)
@@ -456,17 +460,17 @@ async function generateSearchGrid(query) {
 	return { moviesGrid, showsGrid }
 }
 
-async function displaySearchResults(page = 1, query) {
+async function displaySearchResults(query) {
 	const moviesTab = document.querySelector('#tab-1')
 	moviesTab.checked = true
 
-	const { moviesGrid: movieGrid, showsGrid: showsGrid } = await generateSearchGrid(query)
-	movieGrid.id = 'movies'
+	const { moviesGrid, showsGrid } = await generateSearchGrid(query)
+	moviesGrid.id = 'movies'
 	showsGrid.id = 'shows'
 
 	const skeletonGrid = document.querySelector('#results-skeleton')
 	if (moviesTab.checked) {
-		skeletonGrid.replaceWith(movieGrid)
+		skeletonGrid.replaceWith(moviesGrid)
 	} else {
 		skeletonGrid.replaceWith(showsGrid)
 	}
@@ -475,12 +479,316 @@ async function displaySearchResults(page = 1, query) {
 	options.forEach((option) => {
 		option.addEventListener('change', (event) => {
 			if (event.target.id === 'tab-1') {
-				document.querySelector('#shows').replaceWith(movieGrid)
+				document.querySelector('.current').replaceWith(moviesGrid)
 			} else {
-				document.querySelector('#movies').replaceWith(showsGrid)
+				document.querySelector('.current').replaceWith(showsGrid)
 			}
 		})
 	})
+}
+
+async function searchPagination(query) {
+	const previous = document.querySelector('#backwards')
+	const next = document.querySelector('#forwards')
+	const moviesTab = document.querySelector('#tab-1')
+	const showsTab = document.querySelector('#tab-2')
+
+	const { total_pages: totalPagesMovie } = await getData('/search/movie', moviePageSearch, query)
+	const { total_pages: totalPagesShows } = await getData('/search/tv', showsPageSearch, query)
+
+	const currentTab = getCurrentTab()
+
+	if (moviePageSearch >= 1 && currentTab === moviesTab) {
+		next.addEventListener('click', nextPageSearch)
+		previous.style.opacity = 0.2
+		previous.style.cursor = 'default'
+		previous.removeEventListener('click', previousPageSearch)
+
+		console.log('movies page:', moviePageSearch)
+		console.log('shows page:', showsPageSearch)
+	} else if (moviePageSearch <= totalPagesMovie && currentTab === 'movies') {
+		previous.addEventListener('click', previousPageSearch)
+		next.style.opacity = 0.2
+		next.style.cursor = 'default'
+		next.removeEventListener('click', nextPageSearch)
+
+		console.log('movies page:', moviePageSearch)
+		console.log('shows page:', showsPageSearch)
+	}
+
+	if (showsPageSearch >= 1 && currentTab === showsTab) {
+		next.addEventListener('click', nextPageSearch)
+		previous.style.opacity = 0.2
+		previous.style.cursor = 'default'
+		previous.removeEventListener('click', previousPageSearch)
+
+		console.log('movies page:', moviePageSearch)
+		console.log('shows page:', showsPageSearch)
+	} else if (showsPageSearch <= totalPagesShows && currentTab === showsTab) {
+		previous.addEventListener('click', previousPageSearch)
+		next.style.opacity = 0.2
+		next.style.cursor = 'default'
+		next.removeEventListener('click', nextPageSearch)
+
+		console.log('movies page:', moviePageSearch)
+		console.log('shows page:', showsPageSearch)
+	}
+}
+
+async function updateSearchPage(isNext) {
+	const moviesTab = document.querySelector('#tab-1')
+	const showsTab = document.querySelector('#tab-2')
+	const currentTab = getCurrentTab()
+	const currentGrid = document.querySelector('.current')
+
+	// NEXT PAGE ON MOVIES TAB
+	if (isNext && currentTab === moviesTab) {
+		// Replace with skeleton
+		const skeleton = generateSkeletonGrid(20, null)
+		skeleton.classList.add('current')
+		currentGrid.replaceWith(skeleton)
+
+		moviePageSearch++
+		const { results: movies } = await getData('/search/movie', moviePageSearch, query)
+
+		// IIFE for showsGrid if necessary
+		const showsGrid = await (async function () {
+			const { results: shows } = await getData('/search/tv', showsPageSearch, query)
+
+			// Generate grid
+			const showsGrid = document.createElement('div')
+			showsGrid.classList.add('card-grid', 'current')
+			showsGrid.id = 'shows'
+
+			for (let i = 0; i < shows.length; i++) {
+				const card = await generateShowCard(shows, i)
+				showsGrid.append(card)
+			}
+
+			return showsGrid
+		})()
+
+		// Update tab listeners
+		const [tab1, tab2] = Array.from(document.querySelectorAll('.radio-option'))
+		const cloneTab1 = tab1.cloneNode(true)
+		const cloneTab2 = tab2.cloneNode(true)
+		tab1.parentNode.replaceChild(cloneTab1, tab1)
+		tab2.parentNode.replaceChild(cloneTab2, tab2)
+		const options = [cloneTab1, cloneTab2]
+		options.forEach((option) => {
+			option.addEventListener('change', (event) => {
+				if (event.target.id === 'tab-1') {
+					document.querySelector('.current').replaceWith(moviesGrid)
+				} else {
+					document.querySelector('.current').replaceWith(showsGrid)
+				}
+			})
+		})
+
+		// Generate grid
+		const moviesGrid = document.createElement('div')
+		moviesGrid.classList.add('card-grid', 'current')
+		moviesGrid.id = 'movies'
+
+		for (let i = 0; i < movies.length; i++) {
+			const card = await generateMovieCard(movies, i)
+			moviesGrid.append(card)
+		}
+
+		// Update DOM
+		document.querySelector('.current').replaceWith(moviesGrid)
+
+		// NEXT PAGE ON SHOWS TAB
+	} else if (isNext && currentTab === showsTab) {
+		// Replace with skeleton
+		const skeleton = generateSkeletonGrid(20, null)
+		skeleton.classList.add('current')
+		currentGrid.replaceWith(skeleton)
+
+		showsPageSearch++
+		const { results: shows } = await getData('/search/tv', showsPageSearch, query)
+
+		// IIFE for moviesGrid if necessary
+		const moviesGrid = await (async function () {
+			const { results: shows } = await getData('/search/movie', moviePageSearch, query)
+
+			// Generate grid
+			const moviesGrid = document.createElement('div')
+			moviesGrid.classList.add('card-grid', 'current')
+			moviesGrid.id = 'shows'
+
+			for (let i = 0; i < shows.length; i++) {
+				const card = await generateMovieCard(shows, i)
+				moviesGrid.append(card)
+			}
+
+			return moviesGrid
+		})()
+
+		// Update tab listeners
+		const [tab1, tab2] = Array.from(document.querySelectorAll('.radio-option'))
+		const cloneTab1 = tab1.cloneNode(true)
+		const cloneTab2 = tab2.cloneNode(true)
+		tab1.parentNode.replaceChild(cloneTab1, tab1)
+		tab2.parentNode.replaceChild(cloneTab2, tab2)
+		const options = [cloneTab1, cloneTab2]
+		options.forEach((option) => {
+			option.addEventListener('change', (event) => {
+				if (event.target.id === 'tab-1') {
+					document.querySelector('.current').replaceWith(moviesGrid)
+				} else {
+					document.querySelector('.current').replaceWith(showsGrid)
+				}
+			})
+		})
+
+		// Generate grid
+		const showsGrid = document.createElement('div')
+		showsGrid.classList.add('card-grid', 'current')
+		showsGrid.id = 'shows'
+
+		for (let i = 0; i < shows.length; i++) {
+			const card = await generateShowCard(shows, i)
+			showsGrid.append(card)
+		}
+
+		// Update DOM
+		document.querySelector('.current').replaceWith(showsGrid)
+
+		// PREVIOUS PAGE ON MOVIES TAB
+	} else if (!isNext && currentTab === moviesTab) {
+		// Replace with skeleton
+		const skeleton = generateSkeletonGrid(20, null)
+		skeleton.classList.add('current')
+		currentGrid.replaceWith(skeleton)
+
+		moviePageSearch--
+		const { results: movies } = await getData('/search/movie', moviePageSearch, query)
+
+		// IIFE for showsGrid if necessary
+		const showsGrid = await (async function () {
+			const { results: shows } = await getData('/search/tv', showsPageSearch, query)
+
+			// Generate grid
+			const showsGrid = document.createElement('div')
+			showsGrid.classList.add('card-grid', 'current')
+			showsGrid.id = 'shows'
+
+			for (let i = 0; i < shows.length; i++) {
+				const card = await generateShowCard(shows, i)
+				showsGrid.append(card)
+			}
+
+			return showsGrid
+		})()
+
+		// Update tab listeners
+		const [tab1, tab2] = Array.from(document.querySelectorAll('.radio-option'))
+		const cloneTab1 = tab1.cloneNode(true)
+		const cloneTab2 = tab2.cloneNode(true)
+		tab1.parentNode.replaceChild(cloneTab1, tab1)
+		tab2.parentNode.replaceChild(cloneTab2, tab2)
+		const options = [cloneTab1, cloneTab2]
+		options.forEach((option) => {
+			option.addEventListener('change', (event) => {
+				if (event.target.id === 'tab-1') {
+					document.querySelector('.current').replaceWith(moviesGrid)
+				} else {
+					document.querySelector('.current').replaceWith(showsGrid)
+				}
+			})
+		})
+
+		// Generate grid
+		const moviesGrid = document.createElement('div')
+		moviesGrid.classList.add('card-grid', 'current')
+		moviesGrid.id = 'movies'
+
+		for (let i = 0; i < movies.length; i++) {
+			const card = await generateMovieCard(movies, i)
+			moviesGrid.append(card)
+		}
+
+		// Update DOM
+		document.querySelector('.current').replaceWith(moviesGrid)
+
+		// PREVIOUS PAGE ON SHOWS TAB
+	} else if (!isNext && currentTab === showsTab) {
+		// Replace with skeleton
+		const skeleton = generateSkeletonGrid(20, null)
+		skeleton.classList.add('current')
+		currentGrid.replaceWith(skeleton)
+
+		showsPageSearch--
+		const { results: shows } = await getData('/search/tv', showsPageSearch, query)
+
+		// IIFE for moviesGrid if necessary
+		const moviesGrid = await (async function () {
+			const { results: shows } = await getData('/search/movies', moviePageSearch, query)
+
+			// Generate grid
+			const moviesGrid = document.createElement('div')
+			moviesGrid.classList.add('card-grid', 'current')
+			moviesGrid.id = 'shows'
+
+			for (let i = 0; i < shows.length; i++) {
+				const card = await generateMovieCard(shows, i)
+				moviesGrid.append(card)
+			}
+
+			return moviesGrid
+		})()
+
+		// Update tab listeners
+		const [tab1, tab2] = Array.from(document.querySelectorAll('.radio-option'))
+		const cloneTab1 = tab1.cloneNode(true)
+		const cloneTab2 = tab2.cloneNode(true)
+		tab1.parentNode.replaceChild(cloneTab1, tab1)
+		tab2.parentNode.replaceChild(cloneTab2, tab2)
+		const options = [cloneTab1, cloneTab2]
+		options.forEach((option) => {
+			option.addEventListener('change', (event) => {
+				if (event.target.id === 'tab-1') {
+					document.querySelector('.current').replaceWith(moviesGrid)
+				} else {
+					document.querySelector('.current').replaceWith(showsGrid)
+				}
+			})
+		})
+
+		// Generate grid
+		const showsGrid = document.createElement('div')
+		showsGrid.classList.add('card-grid', 'current')
+		showsGrid.id = 'shows'
+
+		for (let i = 0; i < shows.length; i++) {
+			const card = await generateShowCard(shows, i)
+			showsGrid.append(card)
+		}
+
+		// Update DOM
+		document.querySelector('.current').replaceWith(showsGrid)
+	}
+
+	console.log(`movies page: ${moviePageSearch}`, '\n', `shows page:${showsPageSearch}`)
+}
+
+function nextPageSearch() {
+	updateSearchPage(true)
+}
+
+function previousPageSearch() {
+	updateSearchPage(false)
+}
+
+function getCurrentTab() {
+	const moviesTab = document.querySelector('#tab-1')
+	const showsTab = document.querySelector('#tab-2')
+	if (moviesTab.checked) {
+		return moviesTab
+	} else {
+		return showsTab
+	}
 }
 
 // Event Listeners
